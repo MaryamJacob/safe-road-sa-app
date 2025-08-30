@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,87 +11,31 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Shield, Navigation, Filter, Search, ArrowLeft, Clock, ThumbsUp, Users, Route, Zap } from "lucide-react"
 import Link from "next/link"
 
-// Mock data for demonstration
-const mockReports = [
-  {
-    id: 1,
-    type: "pothole",
-    severity: "urgent",
-    location: { x: 45, y: 30 },
-    address: "Main St & 5th Ave",
-    description: "Large pothole causing tire damage",
-    timestamp: "2 hours ago",
-    upvotes: 12,
-    status: "reported",
-    reporter: "John D.",
-  },
-  {
-    id: 2,
-    type: "traffic-light",
-    severity: "urgent",
-    location: { x: 60, y: 45 },
-    address: "Oak St & Pine Ave",
-    description: "Traffic light completely out",
-    timestamp: "30 minutes ago",
-    upvotes: 8,
-    status: "in-progress",
-    reporter: "Sarah M.",
-  },
-  {
-    id: 3,
-    type: "obstruction",
-    severity: "medium",
-    location: { x: 25, y: 60 },
-    address: "Elm St near Park",
-    description: "Fallen tree blocking right lane",
-    timestamp: "1 hour ago",
-    upvotes: 5,
-    status: "reported",
-    reporter: "Mike R.",
-  },
-  {
-    id: 4,
-    type: "debris",
-    severity: "minor",
-    location: { x: 70, y: 25 },
-    address: "Highway 101 Mile 15",
-    description: "Construction debris on shoulder",
-    timestamp: "4 hours ago",
-    upvotes: 3,
-    status: "verified",
-    reporter: "Lisa K.",
-  },
-  {
-    id: 5,
-    type: "accident",
-    severity: "urgent",
-    location: { x: 35, y: 70 },
-    address: "Central Ave & 2nd St",
-    description: "Multi-vehicle accident, emergency services on scene",
-    timestamp: "15 minutes ago",
-    upvotes: 15,
-    status: "emergency",
-    reporter: "Emergency Services",
-  },
-]
-
 const reportTypeColors = {
   pothole: "bg-orange-500",
   "traffic-light": "bg-red-500",
   obstruction: "bg-yellow-500",
   debris: "bg-blue-500",
   accident: "bg-purple-500",
+  "road-hazard": "bg-orange-500",
+  "infrastructure-request": "bg-blue-500",
+  "faulty-traffic-light": "bg-red-500",
+  "emergency-request": "bg-purple-500",
 }
 
 const severityColors = {
+  low: "border-green-400",
   minor: "border-green-400",
   medium: "border-yellow-400",
   urgent: "border-red-500",
 }
 
 export default function MapPage() {
-  const [selectedReport, setSelectedReport] = useState<(typeof mockReports)[0] | null>(null)
-  const [filteredReports, setFilteredReports] = useState(mockReports)
+  const { token } = useAuth()
+  const [reports, setReports] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedReport, setSelectedReport] = useState<any>(null)
+  const [filteredReports, setFilteredReports] = useState([])
   const [filters, setFilters] = useState({
     type: "all",
     severity: "all",
@@ -101,40 +46,98 @@ export default function MapPage() {
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
-    let filtered = mockReports
+    const fetchReports = async () => {
+      try {
+        const response = await fetch("/api/reports", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+        if (response.ok) {
+          const data = await response.json()
+          const reportsWithLocation = (data.reports || []).map((report: any, index: number) => ({
+            ...report,
+            // Generate mock coordinates for visualization (in real app, would use geocoding)
+            location: {
+              x: 20 + ((index * 15) % 60),
+              y: 25 + ((index * 20) % 50),
+            },
+          }))
+          setReports(reportsWithLocation)
+          setFilteredReports(reportsWithLocation)
+        }
+      } catch (error) {
+        console.error("Failed to fetch reports:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchReports()
+  }, [token])
+
+  useEffect(() => {
+    let filtered = reports
 
     if (filters.type !== "all") {
-      filtered = filtered.filter((report) => report.type === filters.type)
+      filtered = filtered.filter((report: any) => report.type === filters.type)
     }
     if (filters.severity !== "all") {
-      filtered = filtered.filter((report) => report.severity === filters.severity)
+      filtered = filtered.filter((report: any) => report.severity === filters.severity)
     }
     if (filters.status !== "all") {
-      filtered = filtered.filter((report) => report.status === filters.status)
+      filtered = filtered.filter((report: any) => report.status === filters.status)
     }
     if (searchQuery) {
       filtered = filtered.filter(
-        (report) =>
-          report.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          report.description.toLowerCase().includes(searchQuery.toLowerCase()),
+        (report: any) =>
+          report.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          report.description?.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     }
 
     setFilteredReports(filtered)
-  }, [filters, searchQuery])
+  }, [filters, searchQuery, reports])
+
+  const handleUpvote = async (reportId: string) => {
+    try {
+      const response = await fetch(`/api/reports/${reportId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ action: "upvote" }),
+      })
+
+      if (response.ok) {
+        // Update local state
+        setReports(
+          reports.map((report: any) =>
+            report.id === reportId ? { ...report, upvotes: (report.upvotes || 0) + 1 } : report,
+          ),
+        )
+      }
+    } catch (error) {
+      console.error("Failed to upvote report:", error)
+    }
+  }
 
   const getReportIcon = (type: string) => {
     switch (type) {
       case "pothole":
+      case "road-hazard":
         return "🕳️"
       case "traffic-light":
+      case "faulty-traffic-light":
         return "🚦"
       case "obstruction":
         return "🚧"
       case "debris":
         return "🗑️"
       case "accident":
+      case "emergency-request":
         return "🚨"
+      case "infrastructure-request":
+        return "🏗️"
       default:
         return "⚠️"
     }
@@ -150,9 +153,32 @@ export default function MapPage() {
         return <Badge className="bg-yellow-100 text-yellow-800">In Progress</Badge>
       case "emergency":
         return <Badge variant="destructive">Emergency</Badge>
+      case "resolved":
+        return <Badge className="bg-green-100 text-green-800">Resolved</Badge>
       default:
         return <Badge variant="outline">Unknown</Badge>
     }
+  }
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+
+    if (diffInHours < 1) return "Less than 1 hour ago"
+    if (diffInHours < 24) return `${diffInHours} hours ago`
+    return date.toLocaleDateString()
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading safety map...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -212,11 +238,10 @@ export default function MapPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="pothole">Potholes</SelectItem>
-                      <SelectItem value="traffic-light">Traffic Lights</SelectItem>
-                      <SelectItem value="obstruction">Obstructions</SelectItem>
-                      <SelectItem value="debris">Debris</SelectItem>
-                      <SelectItem value="accident">Accidents</SelectItem>
+                      <SelectItem value="road-hazard">Road Hazards</SelectItem>
+                      <SelectItem value="infrastructure-request">Infrastructure</SelectItem>
+                      <SelectItem value="faulty-traffic-light">Traffic Lights</SelectItem>
+                      <SelectItem value="emergency-request">Emergency</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -232,7 +257,7 @@ export default function MapPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Severities</SelectItem>
-                      <SelectItem value="minor">Minor</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="urgent">Urgent</SelectItem>
                     </SelectContent>
@@ -250,6 +275,7 @@ export default function MapPage() {
                       <SelectItem value="reported">Reported</SelectItem>
                       <SelectItem value="verified">Verified</SelectItem>
                       <SelectItem value="in-progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
                       <SelectItem value="emergency">Emergency</SelectItem>
                     </SelectContent>
                   </Select>
@@ -265,7 +291,7 @@ export default function MapPage() {
               </Card>
               <Card className="p-3">
                 <div className="text-2xl font-bold text-secondary">
-                  {filteredReports.filter((r) => r.severity === "urgent").length}
+                  {filteredReports.filter((r: any) => r.severity === "urgent").length}
                 </div>
                 <div className="text-xs text-muted-foreground">Urgent Issues</div>
               </Card>
@@ -276,7 +302,7 @@ export default function MapPage() {
           <div className="p-4">
             <h3 className="font-medium mb-3">Recent Reports ({filteredReports.length})</h3>
             <div className="space-y-3">
-              {filteredReports.map((report) => (
+              {filteredReports.map((report: any) => (
                 <Card
                   key={report.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -287,10 +313,10 @@ export default function MapPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{getReportIcon(report.type)}</span>
                         <div>
-                          <div className="font-medium text-sm">{report.address}</div>
+                          <div className="font-medium text-sm">{report.location}</div>
                           <div className="text-xs text-muted-foreground flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {report.timestamp}
+                            {formatTimestamp(report.createdAt)}
                           </div>
                         </div>
                       </div>
@@ -300,7 +326,7 @@ export default function MapPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <ThumbsUp className="h-3 w-3" />
-                        {report.upvotes}
+                        {report.upvotes || 0}
                       </div>
                       <Badge
                         variant="outline"
@@ -347,15 +373,15 @@ export default function MapPage() {
             </div>
 
             {/* Report Markers */}
-            {filteredReports.map((report) => (
+            {filteredReports.map((report: any) => (
               <div
                 key={report.id}
-                className={`absolute w-6 h-6 rounded-full border-2 ${severityColors[report.severity]} ${
-                  reportTypeColors[report.type]
+                className={`absolute w-6 h-6 rounded-full border-2 ${severityColors[report.severity] || severityColors.medium} ${
+                  reportTypeColors[report.type] || reportTypeColors["road-hazard"]
                 } cursor-pointer hover:scale-110 transition-transform shadow-lg flex items-center justify-center text-white text-xs font-bold`}
                 style={{
-                  left: `${report.location.x}%`,
-                  top: `${report.location.y}%`,
+                  left: `${report.location?.x || 50}%`,
+                  top: `${report.location?.y || 50}%`,
                   transform: "translate(-50%, -50%)",
                 }}
                 onClick={() => setSelectedReport(report)}
@@ -414,10 +440,10 @@ export default function MapPage() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <span className="text-2xl">{getReportIcon(selectedReport.type)}</span>
-                  {selectedReport.address}
+                  {selectedReport.location}
                 </DialogTitle>
                 <DialogDescription>
-                  Reported {selectedReport.timestamp} by {selectedReport.reporter}
+                  Reported {formatTimestamp(selectedReport.createdAt)} by {selectedReport.reporterName || "Anonymous"}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -439,9 +465,9 @@ export default function MapPage() {
                 <p className="text-sm">{selectedReport.description}</p>
                 <div className="flex items-center justify-between pt-4 border-t">
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" onClick={() => handleUpvote(selectedReport.id)}>
                       <ThumbsUp className="h-4 w-4 mr-1" />
-                      Verify ({selectedReport.upvotes})
+                      Verify ({selectedReport.upvotes || 0})
                     </Button>
                   </div>
                   <div className="flex items-center gap-2">

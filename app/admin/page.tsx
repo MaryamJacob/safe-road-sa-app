@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -31,81 +32,80 @@ import {
   MessageSquare,
 } from "lucide-react"
 
-// Mock data for admin dashboard
-const mockReports = [
-  {
-    id: "RPT-001",
-    type: "Pothole",
-    severity: "Urgent",
-    location: "Main St & 5th Ave",
-    reporter: "John Doe",
-    timestamp: "2024-01-15 14:30",
-    status: "reported",
-    description: "Large pothole causing tire damage",
-    upvotes: 12,
-    assignedTo: null,
-  },
-  {
-    id: "RPT-002",
-    type: "Traffic Light",
-    severity: "Urgent",
-    location: "Oak St & Pine Ave",
-    reporter: "Sarah Miller",
-    timestamp: "2024-01-15 13:45",
-    status: "in-progress",
-    description: "Traffic light completely out",
-    upvotes: 8,
-    assignedTo: "Municipal Team A",
-  },
-  {
-    id: "RPT-003",
-    type: "Obstruction",
-    severity: "Medium",
-    location: "Elm St near Park",
-    reporter: "Mike Roberts",
-    timestamp: "2024-01-15 12:15",
-    status: "resolved",
-    description: "Fallen tree blocking right lane",
-    upvotes: 5,
-    assignedTo: "Emergency Services",
-  },
-  {
-    id: "RPT-004",
-    type: "Infrastructure Request",
-    severity: "Low",
-    location: "Central Ave & 2nd St",
-    reporter: "Lisa Kim",
-    timestamp: "2024-01-14 16:20",
-    status: "under-review",
-    description: "Request for new turning arrow",
-    upvotes: 15,
-    assignedTo: "Planning Department",
-  },
-]
-
-const analyticsData = {
-  totalReports: 247,
-  urgentReports: 23,
-  resolvedToday: 12,
-  averageResponseTime: "2.4 hours",
-  topHotspots: [
-    { location: "Main St & 5th Ave", reports: 15, type: "Potholes" },
-    { location: "Highway 101", reports: 12, type: "Traffic Lights" },
-    { location: "Oak St Corridor", reports: 9, type: "Obstructions" },
-  ],
-  monthlyTrends: [
-    { month: "Oct", reports: 45, resolved: 42 },
-    { month: "Nov", reports: 52, resolved: 48 },
-    { month: "Dec", reports: 38, resolved: 35 },
-    { month: "Jan", reports: 67, resolved: 58 },
-  ],
-}
-
 export default function AdminDashboard() {
-  const [selectedReport, setSelectedReport] = useState<(typeof mockReports)[0] | null>(null)
+  const { user, token } = useAuth()
+  const [reports, setReports] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedReport, setSelectedReport] = useState<any>(null)
   const [statusFilter, setStatusFilter] = useState("all")
   const [severityFilter, setSeverityFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const response = await fetch("/api/reports", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setReports(data.reports || [])
+        }
+      } catch (error) {
+        console.error("Failed to fetch reports:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (token) {
+      fetchReports()
+    }
+  }, [token])
+
+  const analyticsData = {
+    totalReports: reports.length,
+    urgentReports: reports.filter((r: any) => r.severity === "urgent").length,
+    resolvedToday: reports.filter((r: any) => {
+      const today = new Date().toDateString()
+      return r.status === "resolved" && new Date(r.updatedAt).toDateString() === today
+    }).length,
+    averageResponseTime: "2.4 hours", // This would be calculated from real data
+    topHotspots: getTopHotspots(reports),
+    monthlyTrends: getMonthlyTrends(reports),
+  }
+
+  function getTopHotspots(reports: any[]) {
+    const locationCounts: { [key: string]: { count: number; type: string } } = {}
+    reports.forEach((report) => {
+      if (locationCounts[report.location]) {
+        locationCounts[report.location].count++
+      } else {
+        locationCounts[report.location] = { count: 1, type: report.type }
+      }
+    })
+
+    return Object.entries(locationCounts)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 3)
+      .map(([location, data]) => ({
+        location,
+        reports: data.count,
+        type: data.type,
+      }))
+  }
+
+  function getMonthlyTrends(reports: any[]) {
+    // This would calculate real monthly trends from the data
+    return [
+      { month: "Oct", reports: 45, resolved: 42 },
+      { month: "Nov", reports: 52, resolved: 48 },
+      { month: "Dec", reports: 38, resolved: 35 },
+      { month: "Jan", reports: reports.length, resolved: reports.filter((r: any) => r.status === "resolved").length },
+    ]
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -135,22 +135,60 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleStatusUpdate = (reportId: string, newStatus: string) => {
-    // In a real app, this would update the database
-    console.log(`Updating report ${reportId} to status: ${newStatus}`)
+  const handleStatusUpdate = async (reportId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/reports/${reportId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (response.ok) {
+        // Update local state
+        setReports(reports.map((report: any) => (report.id === reportId ? { ...report, status: newStatus } : report)))
+        console.log(`Updated report ${reportId} to status: ${newStatus}`)
+      }
+    } catch (error) {
+      console.error("Failed to update report status:", error)
+    }
   }
 
-  const filteredReports = mockReports.filter((report) => {
+  const filteredReports = reports.filter((report: any) => {
     const matchesStatus = statusFilter === "all" || report.status === statusFilter
-    const matchesSeverity = severityFilter === "all" || report.severity.toLowerCase() === severityFilter
+    const matchesSeverity = severityFilter === "all" || report.severity?.toLowerCase() === severityFilter
     const matchesSearch =
       !searchQuery ||
-      report.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reporter.toLowerCase().includes(searchQuery.toLowerCase())
+      report.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.reporterName?.toLowerCase().includes(searchQuery.toLowerCase())
 
     return matchesStatus && matchesSeverity && matchesSearch
   })
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading admin dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user || user.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
+          <p className="text-muted-foreground">You need admin privileges to access this dashboard.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -239,12 +277,12 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockReports.slice(0, 4).map((report) => (
+                    {filteredReports.slice(0, 4).map((report: any) => (
                       <div key={report.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex-1">
                           <div className="font-medium text-sm">{report.location}</div>
                           <div className="text-xs text-muted-foreground">
-                            {report.type} • {report.timestamp}
+                            {report.type} • {new Date(report.createdAt).toLocaleString()}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -356,12 +394,12 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredReports.map((report) => (
+                    {filteredReports.map((report: any) => (
                       <TableRow key={report.id}>
                         <TableCell className="font-medium">{report.id}</TableCell>
                         <TableCell>{report.type}</TableCell>
                         <TableCell>{report.location}</TableCell>
-                        <TableCell>{report.reporter}</TableCell>
+                        <TableCell>{report.reporterName || "Anonymous"}</TableCell>
                         <TableCell>{getSeverityBadge(report.severity)}</TableCell>
                         <TableCell>{getStatusBadge(report.status)}</TableCell>
                         <TableCell>{report.assignedTo || "Unassigned"}</TableCell>

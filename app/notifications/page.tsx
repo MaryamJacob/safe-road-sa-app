@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -33,55 +34,10 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-// Mock data for notifications
-const mockNotifications = [
-  {
-    id: 1,
-    type: "urgent",
-    title: "Traffic Light Malfunction",
-    message: "Traffic light at Main St & 5th Ave is completely out. Use alternate routes.",
-    location: "Main St & 5th Ave",
-    timestamp: "5 minutes ago",
-    read: false,
-  },
-  {
-    id: 2,
-    type: "warning",
-    title: "Large Pothole Reported",
-    message: "Multiple users reported a large pothole on your frequent route (Oak St).",
-    location: "Oak St near Park",
-    timestamp: "1 hour ago",
-    read: false,
-  },
-  {
-    id: 3,
-    type: "info",
-    title: "Route Update",
-    message: "Road construction on Elm St has been completed. Normal traffic flow resumed.",
-    location: "Elm St",
-    timestamp: "3 hours ago",
-    read: true,
-  },
-  {
-    id: 4,
-    type: "safety",
-    title: "Safety Alert",
-    message: "Increased hijacking reports in Central Ave area. Exercise caution during evening hours.",
-    location: "Central Ave",
-    timestamp: "1 day ago",
-    read: true,
-  },
-]
-
-const mockRoutes = [
-  { id: 1, name: "Home to Work", from: "123 Home St", to: "456 Office Ave", active: true },
-  { id: 2, name: "Home to School", from: "123 Home St", to: "789 School Rd", active: true },
-  { id: 3, name: "Weekend Route", from: "123 Home St", to: "Mall Plaza", active: false },
-]
-
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(mockNotifications)
-  const [routes, setRoutes] = useState(mockRoutes)
+  const { user, token } = useAuth()
+  const [notifications, setNotifications] = useState([])
+  const [routes, setRoutes] = useState([])
   const [newRoute, setNewRoute] = useState({ name: "", from: "", to: "" })
   const [notificationSettings, setNotificationSettings] = useState({
     pushNotifications: true,
@@ -94,6 +50,113 @@ export default function NotificationsPage() {
     safety: true,
     infrastructure: false,
   })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (user && token) {
+      fetchNotifications()
+      fetchRoutes()
+    }
+  }, [user, token])
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch("/api/notifications", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setNotifications(data.notifications || [])
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error)
+    }
+  }
+
+  const fetchRoutes = async () => {
+    try {
+      const response = await fetch("/api/notifications/routes", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setRoutes(data.routes || [])
+      }
+    } catch (error) {
+      console.error("Failed to fetch routes:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const addRoute = async () => {
+    if (newRoute.name && newRoute.from && newRoute.to && token) {
+      try {
+        const response = await fetch("/api/notifications/routes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(newRoute),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setRoutes([...routes, data.route])
+          setNewRoute({ name: "", from: "", to: "" })
+        }
+      } catch (error) {
+        console.error("Failed to add route:", error)
+      }
+    }
+  }
+
+  const toggleRoute = async (id: string) => {
+    const route = routes.find((r) => r.id === id)
+    if (!route || !token) return
+
+    try {
+      const response = await fetch(`/api/notifications/routes/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ active: !route.active }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setRoutes(routes.map((r) => (r.id === id ? data.route : r)))
+      }
+    } catch (error) {
+      console.error("Failed to toggle route:", error)
+    }
+  }
+
+  const removeRoute = async (id: string) => {
+    if (!token) return
+
+    try {
+      const response = await fetch(`/api/notifications/routes/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        setRoutes(routes.filter((route) => route.id !== id))
+      }
+    } catch (error) {
+      console.error("Failed to remove route:", error)
+    }
+  }
 
   const markAsRead = (id: number) => {
     setNotifications(notifications.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)))
@@ -101,26 +164,6 @@ export default function NotificationsPage() {
 
   const markAllAsRead = () => {
     setNotifications(notifications.map((notif) => ({ ...notif, read: true })))
-  }
-
-  const addRoute = () => {
-    if (newRoute.name && newRoute.from && newRoute.to) {
-      const route = {
-        id: routes.length + 1,
-        ...newRoute,
-        active: true,
-      }
-      setRoutes([...routes, route])
-      setNewRoute({ name: "", from: "", to: "" })
-    }
-  }
-
-  const toggleRoute = (id: number) => {
-    setRoutes(routes.map((route) => (route.id === id ? { ...route, active: !route.active } : route)))
-  }
-
-  const removeRoute = (id: number) => {
-    setRoutes(routes.filter((route) => route.id !== id))
   }
 
   const getNotificationIcon = (type: string) => {
@@ -150,6 +193,17 @@ export default function NotificationsPage() {
   }
 
   const unreadCount = notifications.filter((n) => !n.read).length
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading notifications...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
