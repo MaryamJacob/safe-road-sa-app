@@ -1,12 +1,24 @@
 {
-  "name": "my-v0-project",
-  "version": "0.1.0",
+  "name": "saferoad-sa",
+  "version": "1.0.0",
   "private": true,
+  "description": "Making South African roads safer through community reporting and civic engagement",
+  "keywords": [
+    "road safety",
+    "south africa",
+    "community reporting",
+    "traffic safety",
+    "infrastructure",
+    "civic engagement"
+  ],
+  "license": "MIT",
+  "author": "SafeRoad SA Team",
   "scripts": {
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -38,9 +50,10 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
     "@remix-run/react": "latest",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.46.1",
     "@sveltejs/kit": "latest",
     "@vercel/analytics": "latest",
-    "autoprefixer": "^10.4.20",
     "bcryptjs": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -48,7 +61,6 @@
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
     "fs": "latest",
-    "geist": "^1.3.1",
     "input-otp": "1.4.1",
     "jsonwebtoken": "latest",
     "lucide-react": "^0.454.0",
@@ -81,5 +93,9 @@
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }
