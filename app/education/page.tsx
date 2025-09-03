@@ -21,7 +21,6 @@ import {
   Phone,
   MapPin,
   Search,
-  ArrowLeft,
   Car,
   Wrench,
   Clock,
@@ -220,54 +219,40 @@ export default function EducationPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <ArrowLeft className="h-5 w-5" />
-              <Shield className="h-6 w-6 text-primary" />
-              <span className="font-bold text-primary">SafeRoad SA</span>
-            </Link>
+      {/* Mobile Header */}
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 items-center justify-between px-4">
+          <div className="flex items-center space-x-2">
+            <Shield className="h-6 w-6 text-primary" />
+            <span className="font-bold text-primary">Safety Hub</span>
           </div>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/report" className="text-sm font-medium hover:text-primary transition-colors">
-              Report Issue
-            </Link>
-            <Link href="/map" className="text-sm font-medium hover:text-primary transition-colors">
-              Safety Map
-            </Link>
-            <Link href="/notifications" className="text-sm font-medium hover:text-primary transition-colors">
-              Notifications
-            </Link>
-          </nav>
         </div>
       </header>
 
-      <div className="container max-w-6xl mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Safety Education Hub</h1>
-          <p className="text-muted-foreground">
+      <div className="container max-w-6xl mx-auto py-6 px-4">
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Safety Education Hub</h1>
+          <p className="text-muted-foreground text-sm md:text-base">
             Essential safety information, tutorials, and resources for South African road users.
           </p>
         </div>
 
         <Tabs defaultValue="tutorials" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="tutorials">Tutorials</TabsTrigger>
-            <TabsTrigger value="safety-tips">Safety Tips</TabsTrigger>
-            <TabsTrigger value="hotspots">Risk Areas</TabsTrigger>
-            <TabsTrigger value="emergency">Emergency</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="tutorials" className="text-xs md:text-sm">Tutorials</TabsTrigger>
+            <TabsTrigger value="safety-tips" className="text-xs md:text-sm">Safety Tips</TabsTrigger>
+            <TabsTrigger value="hotspots" className="text-xs md:text-sm">Risk Areas</TabsTrigger>
+            <TabsTrigger value="emergency" className="text-xs md:text-sm">Emergency</TabsTrigger>
           </TabsList>
 
           {/* Tutorials Tab */}
           <TabsContent value="tutorials" className="space-y-6">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex flex-col gap-4">
               <div>
-                <h2 className="text-2xl font-bold">Safety Tutorials</h2>
-                <p className="text-muted-foreground">Learn essential skills for road safety and emergency situations</p>
+                <h2 className="text-xl md:text-2xl font-bold">Safety Tutorials</h2>
+                <p className="text-muted-foreground text-sm">Learn essential skills for road safety and emergency situations</p>
               </div>
-              <div className="relative w-full sm:w-80">
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search tutorials..."
@@ -278,10 +263,10 @@ export default function EducationPage() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {filteredTutorials.map((tutorial) => (
                 <Card key={tutorial.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                  <CardHeader>
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
                         {tutorial.category === "Vehicle Maintenance" ? (
@@ -297,8 +282,8 @@ export default function EducationPage() {
                       </div>
                       {getDifficultyBadge(tutorial.difficulty)}
                     </div>
-                    <CardTitle className="text-lg">{tutorial.title}</CardTitle>
-                    <CardDescription>{tutorial.description}</CardDescription>
+                    <CardTitle className="text-base md:text-lg">{tutorial.title}</CardTitle>
+                    <CardDescription className="text-sm">{tutorial.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between mb-4">
@@ -315,7 +300,7 @@ export default function EducationPage() {
                           View Tutorial
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto mx-4">
                         <DialogHeader>
                           <DialogTitle className="flex items-center gap-2">
                             {tutorial.category === "Vehicle Maintenance" ? (
@@ -373,15 +358,15 @@ export default function EducationPage() {
           {/* Safety Tips Tab */}
           <TabsContent value="safety-tips" className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold">Safety Tips & Best Practices</h2>
-              <p className="text-muted-foreground">Essential safety guidelines for South African road conditions</p>
+              <h2 className="text-xl md:text-2xl font-bold">Safety Tips & Best Practices</h2>
+              <p className="text-muted-foreground text-sm">Essential safety guidelines for South African road conditions</p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {safetyTips.map((category, index) => (
                 <Card key={index}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                       {category.category === "Vehicle Safety" ? (
                         <Car className="h-5 w-5 text-primary" />
                       ) : category.category === "Driving Safety" ? (
@@ -408,15 +393,15 @@ export default function EducationPage() {
 
             {/* Additional Safety Resources */}
             <Card>
-              <CardHeader>
-                <CardTitle>Additional Safety Resources</CardTitle>
-                <CardDescription>External resources for comprehensive road safety education</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base md:text-lg">Additional Safety Resources</CardTitle>
+                <CardDescription className="text-sm">External resources for comprehensive road safety education</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
-                      <h4 className="font-medium">Road Traffic Management Corporation</h4>
+                      <h4 className="font-medium text-sm md:text-base">Road Traffic Management Corporation</h4>
                       <p className="text-sm text-muted-foreground">Official road safety guidelines</p>
                     </div>
                     <Button variant="outline" size="sm">
@@ -425,7 +410,7 @@ export default function EducationPage() {
                   </div>
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
-                      <h4 className="font-medium">South African Police Service</h4>
+                      <h4 className="font-medium text-sm md:text-base">South African Police Service</h4>
                       <p className="text-sm text-muted-foreground">Crime prevention tips</p>
                     </div>
                     <Button variant="outline" size="sm">
@@ -440,18 +425,18 @@ export default function EducationPage() {
           {/* Risk Areas Tab */}
           <TabsContent value="hotspots" className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold">High-Risk Areas</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-xl md:text-2xl font-bold">High-Risk Areas</h2>
+              <p className="text-muted-foreground text-sm">
                 Known crime hotspots and safety information for major South African areas
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {hotspots.map((hotspot, index) => (
                 <Card key={index}>
-                  <CardHeader>
+                  <CardHeader className="pb-3">
                     <div className="flex items-center justify-between mb-2">
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                         <MapPin className="h-5 w-5 text-destructive" />
                         {hotspot.area}
                       </CardTitle>
@@ -460,7 +445,7 @@ export default function EducationPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <h4 className="font-medium mb-2">Common Crimes:</h4>
+                      <h4 className="font-medium mb-2 text-sm">Common Crimes:</h4>
                       <div className="flex flex-wrap gap-2">
                         {hotspot.commonCrimes.map((crime, crimeIndex) => (
                           <Badge key={crimeIndex} variant="outline" className="text-xs">
@@ -470,11 +455,11 @@ export default function EducationPage() {
                       </div>
                     </div>
                     <div>
-                      <h4 className="font-medium mb-2">Safety Tips:</h4>
+                      <h4 className="font-medium mb-2 text-sm">Safety Tips:</h4>
                       <p className="text-sm text-muted-foreground">{hotspot.safetyTips}</p>
                     </div>
                     <div>
-                      <h4 className="font-medium mb-2">Best Times to Travel:</h4>
+                      <h4 className="font-medium mb-2 text-sm">Best Times to Travel:</h4>
                       <p className="text-sm text-muted-foreground">{hotspot.bestTimes}</p>
                     </div>
                   </CardContent>
@@ -483,16 +468,16 @@ export default function EducationPage() {
             </div>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                   <AlertTriangle className="h-5 w-5 text-destructive" />
                   General Precautions for High-Risk Areas
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium mb-3">Before Traveling:</h4>
+                    <h4 className="font-medium mb-3 text-sm">Before Traveling:</h4>
                     <ul className="space-y-2 text-sm">
                       <li className="flex gap-2">
                         <span className="text-primary">•</span>
@@ -513,7 +498,7 @@ export default function EducationPage() {
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-medium mb-3">While Traveling:</h4>
+                    <h4 className="font-medium mb-3 text-sm">While Traveling:</h4>
                     <ul className="space-y-2 text-sm">
                       <li className="flex gap-2">
                         <span className="text-primary">•</span>
@@ -541,8 +526,8 @@ export default function EducationPage() {
           {/* Emergency Contacts Tab */}
           <TabsContent value="emergency" className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold">Emergency Contacts</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-xl md:text-2xl font-bold">Emergency Contacts</h2>
+              <p className="text-muted-foreground text-sm">
                 Essential phone numbers for emergencies, roadside assistance, and support services
               </p>
             </div>
@@ -550,17 +535,17 @@ export default function EducationPage() {
             <div className="space-y-6">
               {emergencyContacts.map((category, index) => (
                 <Card key={index}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                       <Phone className="h-5 w-5 text-primary" />
                       {category.category}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {category.contacts.map((contact, contactIndex) => (
                         <div key={contactIndex} className="p-4 border rounded-lg">
-                          <h4 className="font-medium mb-1">{contact.name}</h4>
+                          <h4 className="font-medium mb-1 text-sm md:text-base">{contact.name}</h4>
                           <div className="text-lg font-bold text-primary mb-2">
                             <a href={`tel:${contact.number}`} className="hover:underline">
                               {contact.number}
@@ -577,17 +562,17 @@ export default function EducationPage() {
 
             {/* Emergency Preparedness */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                   <AlertTriangle className="h-5 w-5 text-secondary" />
                   Emergency Preparedness Checklist
                 </CardTitle>
-                <CardDescription>Keep these items in your vehicle at all times</CardDescription>
+                <CardDescription className="text-sm">Keep these items in your vehicle at all times</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium mb-3">Essential Items:</h4>
+                    <h4 className="font-medium mb-3 text-sm">Essential Items:</h4>
                     <ul className="space-y-2 text-sm">
                       <li className="flex gap-2">
                         <span className="text-primary">✓</span>
@@ -616,7 +601,7 @@ export default function EducationPage() {
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-medium mb-3">Important Documents:</h4>
+                    <h4 className="font-medium mb-3 text-sm">Important Documents:</h4>
                     <ul className="space-y-2 text-sm">
                       <li className="flex gap-2">
                         <span className="text-primary">✓</span>

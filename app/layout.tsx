@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Playfair_Display, Source_Sans_3 } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
+import AppLayout from "@/components/AppLayout"
 import "./globals.css"
 
 const playfairDisplay = Playfair_Display({
@@ -33,8 +34,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* PWA-specific meta tags */}
+        <meta name="theme-color" content="#ffffff" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+
+        {/* Standard meta tags for SEO and sharing */}
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>SafeRoad SA</title>
+        <meta name="description" content="Making South African Roads Safer Together." />
+      </head>
       <body className={`font-sans ${playfairDisplay.variable} ${sourceSans.variable} antialiased`}>
-        <Suspense fallback={null}>{children}</Suspense>
+        <AppLayout>
+          <Suspense fallback={null}>{children}</Suspense>
+        </AppLayout>
         <Analytics />
       </body>
     </html>
