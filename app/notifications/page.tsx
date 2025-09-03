@@ -27,7 +27,6 @@ import {
   Settings,
   Plus,
   X,
-  ArrowLeft,
   Smartphone,
   Mail,
 } from "lucide-react"
@@ -153,48 +152,35 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <ArrowLeft className="h-5 w-5" />
-              <Shield className="h-6 w-6 text-primary" />
-              <span className="font-bold text-primary">SafeRoad SA</span>
-            </Link>
+      {/* Mobile Header */}
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 items-center justify-between px-4">
+          <div className="flex items-center space-x-2">
+            <Shield className="h-6 w-6 text-primary" />
+            <span className="font-bold text-primary">Profile</span>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                  {unreadCount}
-                </Badge>
-              )}
-            </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/report" className="text-sm font-medium hover:text-primary transition-colors">
-                Report Issue
-              </Link>
-              <Link href="/map" className="text-sm font-medium hover:text-primary transition-colors">
-                Safety Map
-              </Link>
-            </nav>
+          <div className="relative">
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                {unreadCount}
+              </Badge>
+            )}
           </div>
         </div>
       </header>
 
-      <div className="container max-w-4xl mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Notifications & Alerts</h1>
-          <p className="text-muted-foreground">
+      <div className="container max-w-4xl mx-auto py-6 px-4">
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Notifications & Alerts</h1>
+          <p className="text-muted-foreground text-sm md:text-base">
             Stay informed about road safety issues on your routes and in your area.
           </p>
         </div>
 
         <Tabs defaultValue="notifications" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="notifications" className="relative">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="notifications" className="relative text-xs md:text-sm">
               Notifications
               {unreadCount > 0 && (
                 <Badge className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
@@ -202,14 +188,14 @@ export default function NotificationsPage() {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="routes">My Routes</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="routes" className="text-xs md:text-sm">My Routes</TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs md:text-sm">Settings</TabsTrigger>
           </TabsList>
 
           {/* Notifications Tab */}
           <TabsContent value="notifications" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Recent Notifications</h2>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <h2 className="text-lg md:text-xl font-semibold">Recent Notifications</h2>
               <Button variant="outline" size="sm" onClick={markAllAsRead} disabled={unreadCount === 0}>
                 Mark All Read
               </Button>
@@ -225,11 +211,11 @@ export default function NotificationsPage() {
                   onClick={() => markAsRead(notification.id)}
                 >
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 mb-2">
+                      <div className="flex items-center gap-3 flex-1">
                         {getNotificationIcon(notification.type)}
                         <div className="flex-1">
-                          <h3 className="font-medium">{notification.title}</h3>
+                          <h3 className="font-medium text-sm md:text-base">{notification.title}</h3>
                           <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
                         </div>
                       </div>
@@ -238,7 +224,7 @@ export default function NotificationsPage() {
                         {!notification.read && <div className="w-2 h-2 rounded-full bg-primary"></div>}
                       </div>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground gap-2">
                       <div className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
                         {notification.location}
@@ -268,8 +254,8 @@ export default function NotificationsPage() {
 
           {/* Routes Tab */}
           <TabsContent value="routes" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">My Routes</h2>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <h2 className="text-lg md:text-xl font-semibold">My Routes</h2>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button size="sm">
@@ -277,7 +263,7 @@ export default function NotificationsPage() {
                     Add Route
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="mx-4">
                   <DialogHeader>
                     <DialogTitle>Add New Route</DialogTitle>
                     <DialogDescription>
@@ -324,31 +310,31 @@ export default function NotificationsPage() {
               {routes.map((route) => (
                 <Card key={route.id}>
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
                           <Route className="h-4 w-4 text-primary" />
-                          <h3 className="font-medium">{route.name}</h3>
+                          <h3 className="font-medium text-sm md:text-base">{route.name}</h3>
                           <Badge variant={route.active ? "default" : "secondary"}>
                             {route.active ? "Active" : "Inactive"}
                           </Badge>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium">From:</span>
-                            {route.from}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">To:</span>
-                            {route.to}
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <Switch checked={route.active} onCheckedChange={() => toggleRoute(route.id)} />
+                          <Button variant="ghost" size="sm" onClick={() => removeRoute(route.id)}>
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Switch checked={route.active} onCheckedChange={() => toggleRoute(route.id)} />
-                        <Button variant="ghost" size="sm" onClick={() => removeRoute(route.id)}>
-                          <X className="h-4 w-4" />
-                        </Button>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">From:</span>
+                          {route.from}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">To:</span>
+                          {route.to}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -371,7 +357,7 @@ export default function NotificationsPage() {
                         Add Your First Route
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="mx-4">
                       <DialogHeader>
                         <DialogTitle>Add New Route</DialogTitle>
                         <DialogDescription>
@@ -419,22 +405,22 @@ export default function NotificationsPage() {
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
-            <h2 className="text-xl font-semibold">Notification Settings</h2>
+            <h2 className="text-lg md:text-xl font-semibold">Notification Settings</h2>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                   <Settings className="h-5 w-5" />
                   Delivery Methods
                 </CardTitle>
-                <CardDescription>Choose how you want to receive notifications</CardDescription>
+                <CardDescription className="text-sm">Choose how you want to receive notifications</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Smartphone className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <Label htmlFor="push-notifications">Push Notifications</Label>
+                      <Label htmlFor="push-notifications" className="text-sm md:text-base">Push Notifications</Label>
                       <p className="text-sm text-muted-foreground">Instant alerts on your device</p>
                     </div>
                   </div>
@@ -451,7 +437,7 @@ export default function NotificationsPage() {
                   <div className="flex items-center gap-3">
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <Label htmlFor="email-notifications">Email Notifications</Label>
+                      <Label htmlFor="email-notifications" className="text-sm md:text-base">Email Notifications</Label>
                       <p className="text-sm text-muted-foreground">Daily summary emails</p>
                     </div>
                   </div>
@@ -468,7 +454,7 @@ export default function NotificationsPage() {
                   <div className="flex items-center gap-3">
                     <Smartphone className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <Label htmlFor="sms-notifications">SMS Notifications</Label>
+                      <Label htmlFor="sms-notifications" className="text-sm md:text-base">SMS Notifications</Label>
                       <p className="text-sm text-muted-foreground">Text messages for urgent alerts only</p>
                     </div>
                   </div>
@@ -484,14 +470,14 @@ export default function NotificationsPage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Alert Types</CardTitle>
-                <CardDescription>Choose which types of safety issues you want to be notified about</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base md:text-lg">Alert Types</CardTitle>
+                <CardDescription className="text-sm">Choose which types of safety issues you want to be notified about</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="potholes">Potholes & Road Damage</Label>
+                    <Label htmlFor="potholes" className="text-sm md:text-base">Potholes & Road Damage</Label>
                     <p className="text-sm text-muted-foreground">Alerts about road surface issues</p>
                   </div>
                   <Switch
@@ -505,7 +491,7 @@ export default function NotificationsPage() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="traffic-lights">Traffic Light Issues</Label>
+                    <Label htmlFor="traffic-lights" className="text-sm md:text-base">Traffic Light Issues</Label>
                     <p className="text-sm text-muted-foreground">Malfunctioning traffic signals</p>
                   </div>
                   <Switch
@@ -519,7 +505,7 @@ export default function NotificationsPage() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="accidents">Accidents & Incidents</Label>
+                    <Label htmlFor="accidents" className="text-sm md:text-base">Accidents & Incidents</Label>
                     <p className="text-sm text-muted-foreground">Traffic accidents and emergency situations</p>
                   </div>
                   <Switch
@@ -533,7 +519,7 @@ export default function NotificationsPage() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="construction">Construction & Roadwork</Label>
+                    <Label htmlFor="construction" className="text-sm md:text-base">Construction & Roadwork</Label>
                     <p className="text-sm text-muted-foreground">Planned construction and road closures</p>
                   </div>
                   <Switch
@@ -547,7 +533,7 @@ export default function NotificationsPage() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="safety">Safety & Security Alerts</Label>
+                    <Label htmlFor="safety" className="text-sm md:text-base">Safety & Security Alerts</Label>
                     <p className="text-sm text-muted-foreground">Crime hotspots and security warnings</p>
                   </div>
                   <Switch
@@ -559,7 +545,7 @@ export default function NotificationsPage() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="infrastructure">Infrastructure Requests</Label>
+                    <Label htmlFor="infrastructure" className="text-sm md:text-base">Infrastructure Requests</Label>
                     <p className="text-sm text-muted-foreground">Updates on infrastructure improvement requests</p>
                   </div>
                   <Switch
@@ -574,9 +560,9 @@ export default function NotificationsPage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Notification Radius</CardTitle>
-                <CardDescription>How far from your routes should we send alerts?</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base md:text-lg">Notification Radius</CardTitle>
+                <CardDescription className="text-sm">How far from your routes should we send alerts?</CardDescription>
               </CardHeader>
               <CardContent>
                 <Select defaultValue="5km">

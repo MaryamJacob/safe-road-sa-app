@@ -6,41 +6,27 @@ import Link from "next/link"
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
+      {/* Mobile Header */}
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center space-x-2">
             <Shield className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold text-primary">SafeRoad SA</span>
           </div>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/report" className="text-sm font-medium hover:text-primary transition-colors">
-              Report Issue
-            </Link>
-            <Link href="/map" className="text-sm font-medium hover:text-primary transition-colors">
-              Safety Map
-            </Link>
-            <Link href="/education" className="text-sm font-medium hover:text-primary transition-colors">
-              Safety Hub
-            </Link>
-            <Link href="/auth" className="text-sm font-medium hover:text-primary transition-colors">
-              Sign In
-            </Link>
-          </nav>
-          <Button asChild className="md:hidden">
+          <Button asChild size="sm">
             <Link href="/auth">Sign In</Link>
           </Button>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
+      <section className="py-12 md:py-20 px-4">
         <div className="container max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-balance mb-6">
+          <h1 className="text-3xl md:text-6xl font-bold text-balance mb-6">
             Making South African Roads
             <span className="text-primary"> Safer Together</span>
           </h1>
-          <p className="text-xl text-muted-foreground text-balance mb-8 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-muted-foreground text-balance mb-8 max-w-2xl mx-auto">
             Report road hazards, request infrastructure improvements, and stay informed about traffic safety in your
             community.
           </p>
@@ -62,15 +48,15 @@ export default function HomePage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-16 px-4 bg-muted/30">
+      <section className="py-12 md:py-16 px-4 bg-muted/30">
         <div className="container max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">How SafeRoad SA Works</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">How SafeRoad SA Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <Card>
-              <CardHeader>
-                <AlertTriangle className="h-10 w-10 text-secondary mb-2" />
-                <CardTitle>Report Issues</CardTitle>
-                <CardDescription>
+              <CardHeader className="pb-3">
+                <AlertTriangle className="h-8 w-8 md:h-10 md:w-10 text-secondary mb-2" />
+                <CardTitle className="text-base md:text-lg">Report Issues</CardTitle>
+                <CardDescription className="text-sm">
                   Quickly report potholes, obstructions, faulty traffic lights, and other road hazards
                 </CardDescription>
               </CardHeader>
@@ -84,10 +70,10 @@ export default function HomePage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <MapPin className="h-10 w-10 text-secondary mb-2" />
-                <CardTitle>Interactive Map</CardTitle>
-                <CardDescription>
+              <CardHeader className="pb-3">
+                <MapPin className="h-8 w-8 md:h-10 md:w-10 text-secondary mb-2" />
+                <CardTitle className="text-base md:text-lg">Interactive Map</CardTitle>
+                <CardDescription className="text-sm">
                   View real-time reports and safety alerts on an interactive map of your area
                 </CardDescription>
               </CardHeader>
@@ -101,10 +87,10 @@ export default function HomePage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <Users className="h-10 w-10 text-secondary mb-2" />
-                <CardTitle>Community Verification</CardTitle>
-                <CardDescription>
+              <CardHeader className="pb-3">
+                <Users className="h-8 w-8 md:h-10 md:w-10 text-secondary mb-2" />
+                <CardTitle className="text-base md:text-lg">Community Verification</CardTitle>
+                <CardDescription className="text-sm">
                   Help verify reports from other users to build a trusted safety network
                 </CardDescription>
               </CardHeader>
@@ -118,10 +104,10 @@ export default function HomePage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <Navigation className="h-10 w-10 text-secondary mb-2" />
-                <CardTitle>Infrastructure Requests</CardTitle>
-                <CardDescription>
+              <CardHeader className="pb-3">
+                <Navigation className="h-8 w-8 md:h-10 md:w-10 text-secondary mb-2" />
+                <CardTitle className="text-base md:text-lg">Infrastructure Requests</CardTitle>
+                <CardDescription className="text-sm">
                   Request new traffic lights, road improvements, and infrastructure changes
                 </CardDescription>
               </CardHeader>
@@ -135,10 +121,10 @@ export default function HomePage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <Phone className="h-10 w-10 text-secondary mb-2" />
-                <CardTitle>Emergency Support</CardTitle>
-                <CardDescription>
+              <CardHeader className="pb-3">
+                <Phone className="h-8 w-8 md:h-10 md:w-10 text-secondary mb-2" />
+                <CardTitle className="text-base md:text-lg">Emergency Support</CardTitle>
+                <CardDescription className="text-sm">
                   Request traffic directors and emergency assistance for major incidents
                 </CardDescription>
               </CardHeader>
@@ -152,10 +138,10 @@ export default function HomePage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <Shield className="h-10 w-10 text-secondary mb-2" />
-                <CardTitle>Safety Education</CardTitle>
-                <CardDescription>Access safety tips, tutorials, and information about high-risk areas</CardDescription>
+              <CardHeader className="pb-3">
+                <Shield className="h-8 w-8 md:h-10 md:w-10 text-secondary mb-2" />
+                <CardTitle className="text-base md:text-lg">Safety Education</CardTitle>
+                <CardDescription className="text-sm">Access safety tips, tutorials, and information about high-risk areas</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="text-sm text-muted-foreground space-y-1">
@@ -170,10 +156,10 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section className="py-12 md:py-20 px-4">
         <div className="container max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-6">Join the SafeRoad SA Community</h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold mb-6">Join the SafeRoad SA Community</h2>
+          <p className="text-base md:text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Together, we can make South African roads safer for everyone. Start reporting issues and help build a
             comprehensive safety network.
           </p>
@@ -184,9 +170,9 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-12 px-4">
+      <footer className="border-t py-8 md:py-12 px-4">
         <div className="container max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Shield className="h-6 w-6 text-primary" />
@@ -197,7 +183,7 @@ export default function HomePage() {
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Features</h3>
+              <h3 className="font-semibold mb-4 text-sm md:text-base">Features</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/report" className="hover:text-primary">
@@ -217,7 +203,7 @@ export default function HomePage() {
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Support</h3>
+              <h3 className="font-semibold mb-4 text-sm md:text-base">Support</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/help" className="hover:text-primary">
@@ -237,7 +223,7 @@ export default function HomePage() {
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Emergency</h3>
+              <h3 className="font-semibold mb-4 text-sm md:text-base">Emergency</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>Police: 10111</li>
                 <li>Ambulance: 10177</li>
@@ -245,7 +231,7 @@ export default function HomePage() {
               </ul>
             </div>
           </div>
-          <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
+          <div className="border-t mt-6 md:mt-8 pt-6 md:pt-8 text-center text-sm text-muted-foreground">
             <p>&copy; 2024 SafeRoad SA. All rights reserved.</p>
           </div>
         </div>

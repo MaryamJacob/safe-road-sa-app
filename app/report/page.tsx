@@ -12,8 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { AlertTriangle, Camera, MapPin, Navigation, Shield, Users, Upload, CheckCircle, ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import { AlertTriangle, Camera, MapPin, Navigation, Shield, Users, Upload, CheckCircle } from "lucide-react"
 
 export default function ReportPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -51,59 +50,48 @@ export default function ReportPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <ArrowLeft className="h-5 w-5" />
-              <Shield className="h-6 w-6 text-primary" />
-              <span className="font-bold text-primary">SafeRoad SA</span>
-            </Link>
+      {/* Mobile Header */}
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 items-center justify-between px-4">
+          <div className="flex items-center space-x-2">
+            <Shield className="h-6 w-6 text-primary" />
+            <span className="font-bold text-primary">Report Issue</span>
           </div>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/map" className="text-sm font-medium hover:text-primary transition-colors">
-              Safety Map
-            </Link>
-            <Link href="/education" className="text-sm font-medium hover:text-primary transition-colors">
-              Safety Hub
-            </Link>
-          </nav>
         </div>
       </header>
 
-      <div className="container max-w-4xl mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Report a Safety Issue</h1>
-          <p className="text-muted-foreground">
+      <div className="container max-w-4xl mx-auto py-6 px-4">
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Report a Safety Issue</h1>
+          <p className="text-muted-foreground text-sm md:text-base">
             Help make our roads safer by reporting hazards, requesting improvements, or alerting the community about
             issues.
           </p>
         </div>
 
         <Tabs defaultValue="hazard" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-            <TabsTrigger value="hazard">Road Hazard</TabsTrigger>
-            <TabsTrigger value="infrastructure">Infrastructure</TabsTrigger>
-            <TabsTrigger value="traffic-light">Traffic Light</TabsTrigger>
-            <TabsTrigger value="emergency">Emergency</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6">
+            <TabsTrigger value="hazard" className="text-xs md:text-sm">Road Hazard</TabsTrigger>
+            <TabsTrigger value="infrastructure" className="text-xs md:text-sm">Infrastructure</TabsTrigger>
+            <TabsTrigger value="traffic-light" className="text-xs md:text-sm">Traffic Light</TabsTrigger>
+            <TabsTrigger value="emergency" className="text-xs md:text-sm">Emergency</TabsTrigger>
           </TabsList>
 
           {/* Road Hazard Report */}
           <TabsContent value="hazard">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                   <AlertTriangle className="h-5 w-5 text-secondary" />
                   Report Road Hazard
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm">
                   Report potholes, obstructions, debris, or other road hazards that pose a safety risk.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                  <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="hazard-type">Hazard Type</Label>
                       <Select>
@@ -123,7 +111,7 @@ export default function ReportPage() {
 
                     <div className="space-y-2">
                       <Label>Severity Level</Label>
-                      <RadioGroup defaultValue="medium" className="flex gap-4">
+                      <RadioGroup defaultValue="medium" className="flex flex-col md:flex-row gap-3 md:gap-4">
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="minor" id="minor" />
                           <Label htmlFor="minor" className="flex items-center gap-1">
@@ -152,7 +140,7 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="location">Location</Label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col md:flex-row gap-2">
                       <Input
                         id="location"
                         placeholder="Enter street address or intersection"
@@ -160,8 +148,9 @@ export default function ReportPage() {
                         onChange={(e) => setCurrentLocation(e.target.value)}
                         className="flex-1"
                       />
-                      <Button type="button" variant="outline" onClick={getCurrentLocation}>
-                        <MapPin className="h-4 w-4" />
+                      <Button type="button" variant="outline" onClick={getCurrentLocation} className="md:w-auto">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        <span className="md:hidden">Get Location</span>
                       </Button>
                     </div>
                   </div>
@@ -177,7 +166,7 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="photos">Photos (Optional)</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                    <div className="border-2 border-dashed border-border rounded-lg p-4 md:p-6 text-center">
                       <input
                         type="file"
                         id="photos"
@@ -209,18 +198,18 @@ export default function ReportPage() {
           {/* Infrastructure Request */}
           <TabsContent value="infrastructure">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                   <Navigation className="h-5 w-5 text-secondary" />
                   Request Infrastructure Change
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm">
                   Request new traffic lights, road improvements, or other infrastructure changes.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                  <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="request-type">Request Type</Label>
                       <Select>
@@ -257,14 +246,15 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="infra-location">Location</Label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col md:flex-row gap-2">
                       <Input
                         id="infra-location"
                         placeholder="Enter intersection or street address"
                         className="flex-1"
                       />
-                      <Button type="button" variant="outline" onClick={getCurrentLocation}>
-                        <MapPin className="h-4 w-4" />
+                      <Button type="button" variant="outline" onClick={getCurrentLocation} className="md:w-auto">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        <span className="md:hidden">Get Location</span>
                       </Button>
                     </div>
                   </div>
@@ -280,7 +270,7 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="infra-photos">Supporting Photos (Optional)</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                    <div className="border-2 border-dashed border-border rounded-lg p-4 md:p-6 text-center">
                       <input type="file" id="infra-photos" multiple accept="image/*" className="hidden" />
                       <Label htmlFor="infra-photos" className="cursor-pointer">
                         <Camera className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
@@ -300,18 +290,18 @@ export default function ReportPage() {
           {/* Traffic Light Report */}
           <TabsContent value="traffic-light">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                   <AlertTriangle className="h-5 w-5 text-destructive" />
                   Report Faulty Traffic Light
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm">
                   Report traffic lights that are not working properly or are completely out of order.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                  <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="fault-type">Fault Type</Label>
                       <Select>
@@ -385,17 +375,17 @@ export default function ReportPage() {
           {/* Emergency Request */}
           <TabsContent value="emergency">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                   <Users className="h-5 w-5 text-secondary" />
                   Request Traffic Director
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm">
                   Request a traffic director for major intersections with faulty lights or emergency situations.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="emergency-type">Request Type</Label>
                     <Select>
