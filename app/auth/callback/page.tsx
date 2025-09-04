@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { useRouter } from "next/navigation"; // use "next/router" if Pages Router
+import { useRouter } from "next/navigation";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -14,15 +14,43 @@ export default function AuthCallbackPage() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (session) {
-        // user logged in
-        router.push("/report");
-      } else {
-        // not logged in
+      if (!session) {
         router.push("/auth");
+        return;
       }
 
-      setLoading(false);
+      try {
+        // Call backend with Supabase access token
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (res.status === 401) {
+          // User not found → sign them up
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+              "Content-Type": "application/json",
+            },
+          });
+        }
+
+        // Successful login or signup → redirect
+        router.push("/report");
+      } catch (err) {
+        console.error("Auth callback error:", err);
+        router.push("/auth");
+      } finally {
+        setLoading(false);
+      }
     };
 
     checkUser();
