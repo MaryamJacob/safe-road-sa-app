@@ -18,13 +18,41 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertTriangle, Camera, MapPin, Navigation, Shield, Users, Upload, CheckCircle } from "lucide-react"
 import { fetchCurrentLocation } from "@/components/current-location" // Current Location
 import LocationPickerMap from "@/components/location-picker-map"; // Location Picker Map
+import { useMapStore, Report } from '@/lib/store'; // Store and Report type
+import { useRouter } from 'next/navigation'; // Router
 
 export default function ReportPage() {
+  const router = useRouter();
+  const { addReport } = useMapStore(); // Get the addReport action
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedImages, setSelectedImages] = useState<File[]>([])
   const [currentLocation, setCurrentLocation] = useState<string>("")
   const [isFetchingLocation, setIsFetchingLocation] = useState(false) // Current Location Fetching State
   const [isMapOpen, setIsMapOpen] = useState(false)
+
+  // Form state variables for all tabs
+  // Hazard form
+  const [hazardType, setHazardType] = useState<string>("")
+  const [severity, setSeverity] = useState<string>("medium")
+  const [description, setDescription] = useState<string>("")
+  
+  // Infrastructure form
+  const [requestType, setRequestType] = useState<string>("")
+  const [priority, setPriority] = useState<string>("")
+  const [infraLocation, setInfraLocation] = useState<string>("")
+  const [justification, setJustification] = useState<string>("")
+  
+  // Traffic Light form
+  const [faultType, setFaultType] = useState<string>("")
+  const [affectedLanes, setAffectedLanes] = useState<string>("")
+  const [intersection, setIntersection] = useState<string>("")
+  const [trafficImpact, setTrafficImpact] = useState<string>("")
+  
+  // Emergency form
+  const [emergencyType, setEmergencyType] = useState<string>("")
+  const [emergencyLocation, setEmergencyLocation] = useState<string>("")
+  const [situation, setSituation] = useState<string>("")
+  const [contact, setContact] = useState<string>("")
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -54,15 +82,121 @@ export default function ReportPage() {
     setIsMapOpen(false); // Close the dialog
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Generic submission function from temp-page.tsx
+  const submitReport = async (type: string, payload: Record<string, any>, withPhotos = false) => {
     setIsSubmitting(true)
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      let res
+      if (withPhotos) {
+        const formData = new FormData()
+        Object.entries(payload).forEach(([key, value]) => {
+          formData.append(key, value as string)
+        })
+        selectedImages.forEach((file) => {
+          formData.append("photos", file)
+        })
+        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${type}`, {
+          method: "POST",
+          body: formData,
+        })
+      } else {
+        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${type}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+      }
+
+      const data = await res.json()
+      console.log("✅ Report submitted:", data)
+      alert("Report submitted successfully!")
+    } catch (err) {
+      console.error(err)
+      alert("Failed to submit report.")
+    } finally {
       setIsSubmitting(false)
-      // Show success message or redirect
-    }, 2000)
+      setSelectedImages([])
+    }
   }
+
+  // Hazard form submission handler
+  const handleHazardSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentLocation) {
+      alert("Please set a location for the report.");
+      return;
+    }
+
+    const payload = {
+      hazard_type: hazardType,
+      severity: severity,
+      location: currentLocation,
+      description: description,
+    };
+
+    // Call the generic submission function
+    await submitReport('hazard', payload, selectedImages.length > 0);
+
+    // Redirect after successful submission
+    router.push('/');
+  };
+
+  // Infrastructure form submission handler
+  const handleInfrastructureSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!infraLocation) {
+      alert("Please set a location for the request.");
+      return;
+    }
+
+    const payload = {
+      request_type: requestType,
+      priority: priority,
+      location: infraLocation,
+      justification: justification,
+    };
+
+    await submitReport('infrastructure', payload, selectedImages.length > 0);
+    router.push('/');
+  };
+
+  // Traffic Light form submission handler
+  const handleTrafficLightSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!intersection) {
+      alert("Please specify the intersection.");
+      return;
+    }
+
+    const payload = {
+      fault_type: faultType,
+      affected_lanes: affectedLanes,
+      intersection: intersection,
+      traffic_impact: trafficImpact,
+    };
+
+    await submitReport('traffic-light', payload);
+    router.push('/');
+  };
+
+  // Emergency form submission handler
+  const handleEmergencySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emergencyLocation) {
+      alert("Please set a location for the emergency request.");
+      return;
+    }
+
+    const payload = {
+      request_type: emergencyType,
+      location: emergencyLocation,
+      description: situation,
+      contact_number: contact,
+    };
+
+    await submitReport('emergency', payload);
+    router.push('/');
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,11 +240,11 @@ export default function ReportPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                <form onSubmit={handleHazardSubmit} className="space-y-4 md:space-y-6">
                   <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="hazard-type">Hazard Type</Label>
-                      <Select>
+                      <Select value={hazardType} onValueChange={setHazardType}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select hazard type" />
                         </SelectTrigger>
@@ -127,7 +261,7 @@ export default function ReportPage() {
 
                     <div className="space-y-2">
                       <Label>Severity Level</Label>
-                      <RadioGroup defaultValue="medium" className="flex flex-col md:flex-row gap-3 md:gap-4">
+                      <RadioGroup value={severity} onValueChange={setSeverity} className="flex flex-col md:flex-row gap-3 md:gap-4">
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="minor" id="minor" />
                           <Label htmlFor="minor" className="flex items-center gap-1">
@@ -179,6 +313,8 @@ export default function ReportPage() {
                     <Label htmlFor="description">Description</Label>
                     <Textarea
                       id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
                       placeholder="Describe the hazard in detail..."
                       className="min-h-[100px]"
                     />
@@ -228,11 +364,11 @@ export default function ReportPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                <form onSubmit={handleInfrastructureSubmit} className="space-y-4 md:space-y-6">
                   <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="request-type">Request Type</Label>
-                      <Select>
+                      <Select value={requestType} onValueChange={setRequestType}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select request type" />
                         </SelectTrigger>
@@ -250,7 +386,7 @@ export default function ReportPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="priority">Priority</Label>
-                      <Select>
+                      <Select value={priority} onValueChange={setPriority}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select priority" />
                         </SelectTrigger>
@@ -269,6 +405,8 @@ export default function ReportPage() {
                     <div className="flex flex-col md:flex-row gap-3">
                       <Input
                         id="infra-location"
+                        value={infraLocation}
+                        onChange={(e) => setInfraLocation(e.target.value)}
                         placeholder="Enter intersection or street address"
                         className="flex-1"
                       />
@@ -287,6 +425,8 @@ export default function ReportPage() {
                     <Label htmlFor="justification">Justification</Label>
                     <Textarea
                       id="justification"
+                      value={justification}
+                      onChange={(e) => setJustification(e.target.value)}
                       placeholder="Explain why this infrastructure change is needed..."
                       className="min-h-[120px]"
                     />
@@ -324,11 +464,11 @@ export default function ReportPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                <form onSubmit={handleTrafficLightSubmit} className="space-y-4 md:space-y-6">
                   <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="fault-type">Fault Type</Label>
-                      <Select>
+                      <Select value={faultType} onValueChange={setFaultType}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select fault type" />
                         </SelectTrigger>
@@ -345,7 +485,7 @@ export default function ReportPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="affected-lanes">Affected Lanes</Label>
-                      <Select>
+                      <Select value={affectedLanes} onValueChange={setAffectedLanes}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select affected lanes" />
                         </SelectTrigger>
@@ -362,13 +502,20 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="intersection">Intersection</Label>
-                    <Input id="intersection" placeholder="e.g., Main St & Oak Ave" />
+                    <Input 
+                      id="intersection" 
+                      value={intersection}
+                      onChange={(e) => setIntersection(e.target.value)}
+                      placeholder="e.g., Main St & Oak Ave" 
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="traffic-impact">Traffic Impact</Label>
                     <Textarea
                       id="traffic-impact"
+                      value={trafficImpact}
+                      onChange={(e) => setTrafficImpact(e.target.value)}
                       placeholder="Describe how this is affecting traffic flow..."
                       className="min-h-[80px]"
                     />
@@ -409,10 +556,10 @@ export default function ReportPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                <form onSubmit={handleEmergencySubmit} className="space-y-4 md:space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="emergency-type">Request Type</Label>
-                    <Select>
+                    <Select value={emergencyType} onValueChange={setEmergencyType}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select request type" />
                       </SelectTrigger>
@@ -427,13 +574,20 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="emergency-location">Location</Label>
-                    <Input id="emergency-location" placeholder="Exact intersection or address" />
+                    <Input 
+                      id="emergency-location" 
+                      value={emergencyLocation}
+                      onChange={(e) => setEmergencyLocation(e.target.value)}
+                      placeholder="Exact intersection or address" 
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="situation">Situation Description</Label>
                     <Textarea
                       id="situation"
+                      value={situation}
+                      onChange={(e) => setSituation(e.target.value)}
                       placeholder="Describe the current situation and why assistance is needed..."
                       className="min-h-[100px]"
                     />
@@ -441,7 +595,13 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="contact">Your Contact Number</Label>
-                    <Input id="contact" type="tel" placeholder="+27 XX XXX XXXX" />
+                    <Input 
+                      id="contact" 
+                      type="tel" 
+                      value={contact}
+                      onChange={(e) => setContact(e.target.value)}
+                      placeholder="+27 XX XXX XXXX" 
+                    />
                   </div>
 
                   <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-4">
@@ -464,7 +624,7 @@ export default function ReportPage() {
           </TabsContent>
         </Tabs>
 
-        // Location Picker Map Dialog
+        {/* Emergency Request */}
         <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
