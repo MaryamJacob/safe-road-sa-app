@@ -2,7 +2,7 @@
 
 "use client"
 
-import type React from "react"
+import type React from "react";
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -56,9 +56,9 @@ export default function ReportPage() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setSelectedImages(Array.from(e.target.files))
+      setSelectedImages(Array.from(e.target.files));
     }
-  }
+  };
 
   // Get Current Location
   const getCurrentLocation = async () => {
@@ -74,7 +74,7 @@ export default function ReportPage() {
     } finally {
       setIsFetchingLocation(false)
     }
-  }
+  };
 
   // Handle Location Select
   const handleLocationSelect = (coords: { lat: number, lng: number }) => {
@@ -246,19 +246,29 @@ export default function ReportPage() {
 
       <div className="container max-w-4xl mx-auto py-6 px-4">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Report a Safety Issue</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">
+            Report a Safety Issue
+          </h1>
           <p className="text-muted-foreground text-sm md:text-base">
-            Help make our roads safer by reporting hazards, requesting improvements, or alerting the community about
-            issues.
+            Help make our roads safer by reporting hazards, requesting
+            improvements, or alerting the community about issues.
           </p>
         </div>
 
         <Tabs defaultValue="hazard" className="w-full">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6">
-            <TabsTrigger value="hazard" className="text-xs md:text-sm">Road Hazard</TabsTrigger>
-            <TabsTrigger value="infrastructure" className="text-xs md:text-sm">Infrastructure</TabsTrigger>
-            <TabsTrigger value="traffic-light" className="text-xs md:text-sm">Traffic Light</TabsTrigger>
-            <TabsTrigger value="emergency" className="text-xs md:text-sm">Emergency</TabsTrigger>
+            <TabsTrigger value="hazard" className="text-xs md:text-sm">
+              Road Hazard
+            </TabsTrigger>
+            <TabsTrigger value="infrastructure" className="text-xs md:text-sm">
+              Infrastructure
+            </TabsTrigger>
+            <TabsTrigger value="traffic-light" className="text-xs md:text-sm">
+              Traffic Light
+            </TabsTrigger>
+            <TabsTrigger value="emergency" className="text-xs md:text-sm">
+              Emergency
+            </TabsTrigger>
           </TabsList>
 
           {/* Road Hazard Report */}
@@ -270,7 +280,8 @@ export default function ReportPage() {
                   Report Road Hazard
                 </CardTitle>
                 <CardDescription className="text-sm">
-                  Report potholes, obstructions, debris, or other road hazards that pose a safety risk.
+                  Report potholes, obstructions, debris, or other road hazards
+                  that pose a safety risk.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -298,23 +309,38 @@ export default function ReportPage() {
                       <RadioGroup value={severity} onValueChange={setSeverity} className="flex flex-col md:flex-row gap-3 md:gap-4">
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="minor" id="minor" />
-                          <Label htmlFor="minor" className="flex items-center gap-1">
-                            <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          <Label
+                            htmlFor="minor"
+                            className="flex items-center gap-1"
+                          >
+                            <Badge
+                              variant="secondary"
+                              className="bg-green-100 text-green-800"
+                            >
                               Minor
                             </Badge>
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="medium" id="medium" />
-                          <Label htmlFor="medium" className="flex items-center gap-1">
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                          <Label
+                            htmlFor="medium"
+                            className="flex items-center gap-1"
+                          >
+                            <Badge
+                              variant="secondary"
+                              className="bg-yellow-100 text-yellow-800"
+                            >
                               Medium
                             </Badge>
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="urgent" id="urgent" />
-                          <Label htmlFor="urgent" className="flex items-center gap-1">
+                          <Label
+                            htmlFor="urgent"
+                            className="flex items-center gap-1"
+                          >
                             <Badge variant="destructive">Urgent</Badge>
                           </Label>
                         </div>
@@ -367,18 +393,28 @@ export default function ReportPage() {
                       />
                       <Label htmlFor="photos" className="cursor-pointer">
                         <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Click to upload photos or drag and drop</p>
+                        <p className="text-sm text-muted-foreground">
+                          Click to upload photos or drag and drop
+                        </p>
                       </Label>
                       {selectedImages.length > 0 && (
                         <div className="mt-4">
-                          <p className="text-sm font-medium">{selectedImages.length} file(s) selected</p>
+                          <p className="text-sm font-medium">
+                            {selectedImages.length} file(s) selected
+                          </p>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Submitting Report..." : "Submit Hazard Report"}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting
+                      ? "Submitting Report..."
+                      : "Submit Hazard Report"}
                   </Button>
                 </form>
               </CardContent>
@@ -394,7 +430,8 @@ export default function ReportPage() {
                   Request Infrastructure Change
                 </CardTitle>
                 <CardDescription className="text-sm">
-                  Request new traffic lights, road improvements, or other infrastructure changes.
+                  Request new traffic lights, road improvements, or other
+                  infrastructure changes.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -467,18 +504,34 @@ export default function ReportPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="infra-photos">Supporting Photos (Optional)</Label>
+                    <Label htmlFor="infra-photos">
+                      Supporting Photos (Optional)
+                    </Label>
                     <div className="border-2 border-dashed border-border rounded-lg p-4 md:p-6 text-center">
-                      <input type="file" id="infra-photos" multiple accept="image/*" className="hidden" />
+                      <input
+                        type="file"
+                        id="infra-photos"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                      />
                       <Label htmlFor="infra-photos" className="cursor-pointer">
                         <Camera className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Upload photos of the current situation</p>
+                        <p className="text-sm text-muted-foreground">
+                          Upload photos of the current situation
+                        </p>
                       </Label>
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Submitting Request..." : "Submit Infrastructure Request"}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting
+                      ? "Submitting Request..."
+                      : "Submit Infrastructure Request"}
                   </Button>
                 </form>
               </CardContent>
@@ -494,7 +547,8 @@ export default function ReportPage() {
                   Report Faulty Traffic Light
                 </CardTitle>
                 <CardDescription className="text-sm">
-                  Report traffic lights that are not working properly or are completely out of order.
+                  Report traffic lights that are not working properly or are
+                  completely out of order.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -558,10 +612,13 @@ export default function ReportPage() {
                   <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <AlertTriangle className="h-4 w-4 text-destructive" />
-                      <span className="font-medium text-destructive">Urgent Alert</span>
+                      <span className="font-medium text-destructive">
+                        Urgent Alert
+                      </span>
                     </div>
                     <p className="text-sm text-destructive/80">
-                      This report will be immediately escalated to municipal authorities and emergency services.
+                      This report will be immediately escalated to municipal
+                      authorities and emergency services.
                     </p>
                   </div>
 
@@ -586,7 +643,8 @@ export default function ReportPage() {
                   Request Traffic Director
                 </CardTitle>
                 <CardDescription className="text-sm">
-                  Request a traffic director for major intersections with faulty lights or emergency situations.
+                  Request a traffic director for major intersections with faulty
+                  lights or emergency situations.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -641,16 +699,24 @@ export default function ReportPage() {
                   <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle className="h-4 w-4 text-secondary" />
-                      <span className="font-medium text-secondary">Priority Request</span>
+                      <span className="font-medium text-secondary">
+                        Priority Request
+                      </span>
                     </div>
                     <p className="text-sm text-secondary/80">
-                      Emergency requests are sent directly to municipal authorities and insurance partners for immediate
-                      response.
+                      Emergency requests are sent directly to municipal
+                      authorities and insurance partners for immediate response.
                     </p>
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Sending Request..." : "Send Emergency Request"}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting
+                      ? "Sending Request..."
+                      : "Send Emergency Request"}
                   </Button>
                 </form>
               </CardContent>
@@ -673,5 +739,5 @@ export default function ReportPage() {
 
       </div>
     </div>
-  )
+  );
 }
