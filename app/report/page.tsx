@@ -1,7 +1,8 @@
+// report/page.tsx Functions
+
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,401 +39,296 @@ export default function ReportPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const submitReport = async (type: string, payload: Record<string, any>, withPhotos = false) => {
     setIsSubmitting(true)
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      let res
+      if (withPhotos) {
+        const formData = new FormData()
+        Object.entries(payload).forEach(([key, value]) => {
+          formData.append(key, value as string)
+        })
+        selectedImages.forEach((file) => {
+          formData.append("photos", file)
+        })
+        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${type}`, {
+          method: "POST",
+          body: formData,
+        })
+      } else {
+        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${type}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+      }
+
+      const data = await res.json()
+      console.log("✅ Report submitted:", data)
+      alert("Report submitted successfully!")
+    } catch (err) {
+      console.error(err)
+      alert("Failed to submit report.")
+    } finally {
       setIsSubmitting(false)
-      // Show success message or redirect
-    }, 2000)
+      setSelectedImages([])
+    }
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Header */}
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-4">
-          <div className="flex items-center space-x-2">
-            <Shield className="h-6 w-6 text-primary" />
-            <span className="font-bold text-primary">Report Issue</span>
-          </div>
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
+        <div className="flex h-16 items-center px-4">
+          <Shield className="h-6 w-6 text-primary mr-2" />
+          <span className="font-bold text-primary">Report Issue</span>
         </div>
       </header>
 
       <div className="container max-w-4xl mx-auto py-6 px-4">
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Report a Safety Issue</h1>
-          <p className="text-muted-foreground text-sm md:text-base">
-            Help make our roads safer by reporting hazards, requesting improvements, or alerting the community about
-            issues.
-          </p>
-        </div>
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">Report a Safety Issue</h1>
+        <p className="text-muted-foreground mb-6">
+          Help make our roads safer by reporting hazards, requesting improvements, or alerting the community about
+          issues.
+        </p>
 
         <Tabs defaultValue="hazard" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-6">
-            <TabsTrigger value="hazard" className="text-xs md:text-sm">Road Hazard</TabsTrigger>
-            <TabsTrigger value="infrastructure" className="text-xs md:text-sm">Infrastructure</TabsTrigger>
-            <TabsTrigger value="traffic-light" className="text-xs md:text-sm">Traffic Light</TabsTrigger>
-            <TabsTrigger value="emergency" className="text-xs md:text-sm">Emergency</TabsTrigger>
+          <TabsList className="grid grid-cols-2 lg:grid-cols-4 mb-6">
+            <TabsTrigger value="hazard">Road Hazard</TabsTrigger>
+            <TabsTrigger value="infrastructure">Infrastructure</TabsTrigger>
+            <TabsTrigger value="traffic-light">Traffic Light</TabsTrigger>
+            <TabsTrigger value="emergency">Emergency</TabsTrigger>
           </TabsList>
 
-          {/* Road Hazard Report */}
+          {/* Hazard */}
           <TabsContent value="hazard">
             <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-                  <AlertTriangle className="h-5 w-5 text-secondary" />
-                  Report Road Hazard
+              <CardHeader>
+                <CardTitle className="flex gap-2">
+                  <AlertTriangle className="h-5 w-5 text-secondary" /> Report Road Hazard
                 </CardTitle>
-                <CardDescription className="text-sm">
-                  Report potholes, obstructions, debris, or other road hazards that pose a safety risk.
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-                  <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="hazard-type">Hazard Type</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select hazard type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pothole">Pothole</SelectItem>
-                          <SelectItem value="obstruction">Road Obstruction</SelectItem>
-                          <SelectItem value="debris">Debris on Road</SelectItem>
-                          <SelectItem value="accident">Accident Scene</SelectItem>
-                          <SelectItem value="flooding">Road Flooding</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    const payload = {
+                      hazard_type: (e.currentTarget as any)["hazard-type"].value,
+                      severity: (e.currentTarget as any)["severity"].value,
+                      location: (e.currentTarget as any)["location"].value,
+                      description: (e.currentTarget as any)["description"].value,
+                    }
+                    submitReport("hazard", payload, true)
+                  }}
+                  className="space-y-4"
+                >
+                  <Label>Hazard Type</Label>
+                  <Select name="hazard-type" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select hazard type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pothole">Pothole</SelectItem>
+                      <SelectItem value="road obstruction">Road Obstruction</SelectItem>
+                      <SelectItem value="debris on road">Debris on Road</SelectItem>
+                      <SelectItem value="accident scene">Accident Scene</SelectItem>
+                      <SelectItem value="road flooding">Road Flooding</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                    <div className="space-y-2">
-                      <Label>Severity Level</Label>
-                      <RadioGroup defaultValue="medium" className="flex flex-col md:flex-row gap-3 md:gap-4">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="minor" id="minor" />
-                          <Label htmlFor="minor" className="flex items-center gap-1">
-                            <Badge variant="secondary" className="bg-green-100 text-green-800">
-                              Minor
-                            </Badge>
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="medium" id="medium" />
-                          <Label htmlFor="medium" className="flex items-center gap-1">
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                              Medium
-                            </Badge>
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="urgent" id="urgent" />
-                          <Label htmlFor="urgent" className="flex items-center gap-1">
-                            <Badge variant="destructive">Urgent</Badge>
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  </div>
+                  <Label>Severity</Label>
+                  <RadioGroup name="severity" defaultValue="medium" className="flex gap-4">
+                    <div><RadioGroupItem value="minor" id="minor" /><Label htmlFor="minor">Minor</Label></div>
+                    <div><RadioGroupItem value="medium" id="medium" /><Label htmlFor="medium">Medium</Label></div>
+                    <div><RadioGroupItem value="urgent" id="urgent" /><Label htmlFor="urgent">Urgent</Label></div>
+                  </RadioGroup>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <div className="flex flex-col md:flex-row gap-2">
-                      <Input
-                        id="location"
-                        placeholder="Enter street address or intersection"
-                        value={currentLocation}
-                        onChange={(e) => setCurrentLocation(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button type="button" variant="outline" onClick={getCurrentLocation} className="md:w-auto">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        <span className="md:hidden">Get Location</span>
-                      </Button>
-                    </div>
-                  </div>
+                  <Label>Location</Label>
+                  <Input id="location" name="location" value={currentLocation} onChange={(e) => setCurrentLocation(e.target.value)} />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Describe the hazard in detail..."
-                      className="min-h-[100px]"
-                    />
-                  </div>
+                  <Label>Description</Label>
+                  <Textarea id="description" name="description" />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="photos">Photos (Optional)</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-4 md:p-6 text-center">
-                      <input
-                        type="file"
-                        id="photos"
-                        multiple
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                      <Label htmlFor="photos" className="cursor-pointer">
-                        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Click to upload photos or drag and drop</p>
-                      </Label>
-                      {selectedImages.length > 0 && (
-                        <div className="mt-4">
-                          <p className="text-sm font-medium">{selectedImages.length} file(s) selected</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <Label>Photos</Label>
+                  <input type="file" multiple accept="image/*" onChange={handleImageUpload} />
 
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Submitting Report..." : "Submit Hazard Report"}
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : "Submit Hazard"}
                   </Button>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Infrastructure Request */}
+          {/* Infrastructure */}
           <TabsContent value="infrastructure">
             <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-                  <Navigation className="h-5 w-5 text-secondary" />
-                  Request Infrastructure Change
+              <CardHeader>
+                <CardTitle className="flex gap-2">
+                  <Navigation className="h-5 w-5 text-secondary" /> Infrastructure Request
                 </CardTitle>
-                <CardDescription className="text-sm">
-                  Request new traffic lights, road improvements, or other infrastructure changes.
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-                  <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="request-type">Request Type</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select request type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="traffic-light">New Traffic Light</SelectItem>
-                          <SelectItem value="turning-arrow">Add Turning Arrow</SelectItem>
-                          <SelectItem value="stop-sign">New Stop Sign</SelectItem>
-                          <SelectItem value="speed-bump">Speed Bump</SelectItem>
-                          <SelectItem value="pedestrian-crossing">Pedestrian Crossing</SelectItem>
-                          <SelectItem value="road-marking">Road Marking</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    const payload = {
+                      request_type: (e.currentTarget as any)["request-type"].value,
+                      priority: (e.currentTarget as any)["priority"].value,
+                      location: (e.currentTarget as any)["infra-location"].value,
+                      justification: (e.currentTarget as any)["justification"].value,
+                    }
+                    submitReport("infrastructure", payload, true)
+                  }}
+                  className="space-y-4"
+                >
+                  <Label>Request Type</Label>
+                  <Select name="request-type" required>
+                    <SelectTrigger><SelectValue placeholder="Select request" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new traffic light">New Traffic Light</SelectItem>
+                      <SelectItem value="add turning arrow">Add Turning Arrow</SelectItem>
+                      <SelectItem value="new stop sign">New Stop Sign</SelectItem>
+                      <SelectItem value="speed bump">Speed Bump</SelectItem>
+                      <SelectItem value="pedestrian crossing">Pedestrian Crossing</SelectItem>
+                      <SelectItem value="road marking">Road Marking</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="priority">Priority</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low Priority</SelectItem>
-                          <SelectItem value="medium">Medium Priority</SelectItem>
-                          <SelectItem value="high">High Priority</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  <Label>Priority</Label>
+                  <Select name="priority" required>
+                    <SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low priority">Low</SelectItem>
+                      <SelectItem value="medium priority">Medium</SelectItem>
+                      <SelectItem value="high priority">High</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="infra-location">Location</Label>
-                    <div className="flex flex-col md:flex-row gap-2">
-                      <Input
-                        id="infra-location"
-                        placeholder="Enter intersection or street address"
-                        className="flex-1"
-                      />
-                      <Button type="button" variant="outline" onClick={getCurrentLocation} className="md:w-auto">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        <span className="md:hidden">Get Location</span>
-                      </Button>
-                    </div>
-                  </div>
+                  <Label>Location</Label>
+                  <Input name="infra-location" />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="justification">Justification</Label>
-                    <Textarea
-                      id="justification"
-                      placeholder="Explain why this infrastructure change is needed..."
-                      className="min-h-[120px]"
-                    />
-                  </div>
+                  <Label>Justification</Label>
+                  <Textarea name="justification" />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="infra-photos">Supporting Photos (Optional)</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-4 md:p-6 text-center">
-                      <input type="file" id="infra-photos" multiple accept="image/*" className="hidden" />
-                      <Label htmlFor="infra-photos" className="cursor-pointer">
-                        <Camera className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Upload photos of the current situation</p>
-                      </Label>
-                    </div>
-                  </div>
+                  <Label>Photos</Label>
+                  <input type="file" multiple accept="image/*" onChange={handleImageUpload} />
 
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Submitting Request..." : "Submit Infrastructure Request"}
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : "Submit Request"}
                   </Button>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Traffic Light Report */}
+          {/* Traffic Light */}
           <TabsContent value="traffic-light">
             <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-                  <AlertTriangle className="h-5 w-5 text-destructive" />
-                  Report Faulty Traffic Light
+              <CardHeader>
+                <CardTitle className="flex gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive" /> Traffic Light Fault
                 </CardTitle>
-                <CardDescription className="text-sm">
-                  Report traffic lights that are not working properly or are completely out of order.
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-                  <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fault-type">Fault Type</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select fault type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="completely-off">Completely Off</SelectItem>
-                          <SelectItem value="one-direction">One Direction Not Working</SelectItem>
-                          <SelectItem value="stuck-red">Stuck on Red</SelectItem>
-                          <SelectItem value="stuck-green">Stuck on Green</SelectItem>
-                          <SelectItem value="flashing">Flashing/Intermittent</SelectItem>
-                          <SelectItem value="timing-issue">Timing Issues</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    const payload = {
+                      fault_type: (e.currentTarget as any)["fault-type"].value,
+                      affected_lanes: (e.currentTarget as any)["affected-lanes"].value,
+                      intersection: (e.currentTarget as any)["intersection"].value,
+                      traffic_impact: (e.currentTarget as any)["traffic-impact"].value,
+                    }
+                    submitReport("traffic-light", payload)
+                  }}
+                  className="space-y-4"
+                >
+                  <Label>Fault Type</Label>
+                  <Select name="fault-type" required>
+                    <SelectTrigger><SelectValue placeholder="Select fault" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="completely off">Completely Off</SelectItem>
+                      <SelectItem value="one direction not working">One Direction Not Working</SelectItem>
+                      <SelectItem value="stuck on red">Stuck on Red</SelectItem>
+                      <SelectItem value="stuck on green">Stuck on Green</SelectItem>
+                      <SelectItem value="flashing">Flashing</SelectItem>
+                      <SelectItem value="timing issues">Timing Issues</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="affected-lanes">Affected Lanes</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select affected lanes" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Directions</SelectItem>
-                          <SelectItem value="north-south">North-South</SelectItem>
-                          <SelectItem value="east-west">East-West</SelectItem>
-                          <SelectItem value="single-lane">Single Lane</SelectItem>
-                          <SelectItem value="turning-lane">Turning Lane Only</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  <Label>Affected Lanes</Label>
+                  <Select name="affected-lanes" required>
+                    <SelectTrigger><SelectValue placeholder="Select lanes" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all directions">All Directions</SelectItem>
+                      <SelectItem value="north-south">North-South</SelectItem>
+                      <SelectItem value="east-west">East-West</SelectItem>
+                      <SelectItem value="single lane">Single Lane</SelectItem>
+                      <SelectItem value="turning lane only">Turning Lane Only</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="intersection">Intersection</Label>
-                    <Input id="intersection" placeholder="e.g., Main St & Oak Ave" />
-                  </div>
+                  <Label>Intersection</Label>
+                  <Input name="intersection" required />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="traffic-impact">Traffic Impact</Label>
-                    <Textarea
-                      id="traffic-impact"
-                      placeholder="Describe how this is affecting traffic flow..."
-                      className="min-h-[80px]"
-                    />
-                  </div>
+                  <Label>Traffic Impact</Label>
+                  <Textarea name="traffic-impact" />
 
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-4 w-4 text-destructive" />
-                      <span className="font-medium text-destructive">Urgent Alert</span>
-                    </div>
-                    <p className="text-sm text-destructive/80">
-                      This report will be immediately escalated to municipal authorities and emergency services.
-                    </p>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full bg-destructive hover:bg-destructive/90"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Sending Alert..." : "Send Urgent Alert"}
+                  <Button type="submit" className="bg-destructive" disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : "Report Fault"}
                   </Button>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Emergency Request */}
+          {/* Emergency */}
           <TabsContent value="emergency">
             <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-                  <Users className="h-5 w-5 text-secondary" />
-                  Request Traffic Director
+              <CardHeader>
+                <CardTitle className="flex gap-2">
+                  <Users className="h-5 w-5 text-secondary" /> Emergency Request
                 </CardTitle>
-                <CardDescription className="text-sm">
-                  Request a traffic director for major intersections with faulty lights or emergency situations.
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency-type">Request Type</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select request type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="traffic-director">Traffic Director</SelectItem>
-                        <SelectItem value="emergency-response">Emergency Response</SelectItem>
-                        <SelectItem value="accident-management">Accident Management</SelectItem>
-                        <SelectItem value="event-support">Event Traffic Support</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    const payload = {
+                      request_type: (e.currentTarget as any)["emergency-type"].value,
+                      location: (e.currentTarget as any)["emergency-location"].value,
+                      description: (e.currentTarget as any)["situation"].value,
+                      contact_number: (e.currentTarget as any)["contact"].value,
+                    }
+                    submitReport("emergency", payload)
+                  }}
+                  className="space-y-4"
+                >
+                  <Label>Request Type</Label>
+                  <Select name="emergency-type" required>
+                    <SelectTrigger><SelectValue placeholder="Select request" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="traffic director">Traffic Director</SelectItem>
+                      <SelectItem value="emergency response">Emergency Response</SelectItem>
+                      <SelectItem value="accident management">Accident Management</SelectItem>
+                      <SelectItem value="event traffic support">Event Traffic Support</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency-location">Location</Label>
-                    <Input id="emergency-location" placeholder="Exact intersection or address" />
-                  </div>
+                  <Label>Location</Label>
+                  <Input name="emergency-location" required />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="situation">Situation Description</Label>
-                    <Textarea
-                      id="situation"
-                      placeholder="Describe the current situation and why assistance is needed..."
-                      className="min-h-[100px]"
-                    />
-                  </div>
+                  <Label>Situation</Label>
+                  <Textarea name="situation" />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="contact">Your Contact Number</Label>
-                    <Input id="contact" type="tel" placeholder="+27 XX XXX XXXX" />
-                  </div>
+                  <Label>Contact Number</Label>
+                  <Input name="contact" type="tel" required />
 
-                  <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="h-4 w-4 text-secondary" />
-                      <span className="font-medium text-secondary">Priority Request</span>
-                    </div>
-                    <p className="text-sm text-secondary/80">
-                      Emergency requests are sent directly to municipal authorities and insurance partners for immediate
-                      response.
-                    </p>
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Sending Request..." : "Send Emergency Request"}
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : "Send Emergency Request"}
                   </Button>
                 </form>
               </CardContent>
