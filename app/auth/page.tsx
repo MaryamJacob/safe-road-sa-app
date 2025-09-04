@@ -76,6 +76,27 @@ export default function AuthPage() {
     const phone = formData.get("phone") as string;
     const location = formData.get("location") as string;
 
+    console.log("Form data:", {
+      name,
+      email,
+      password: password ? "***" : "empty",
+      phone,
+      location,
+    });
+
+    // Check if email is actually captured
+    if (!email) {
+      alert("Email field is empty. Please check the form.");
+      setIsLoading(false);
+      return;
+    }
+    const emailTrimmed = email.trim();
+    console.log("Email validation:", {
+      original: email,
+      trimmed: emailTrimmed,
+      hasAtSymbol: emailTrimmed.includes("@"),
+      hasDot: emailTrimmed.includes("."),
+    });
     // Add email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -85,9 +106,13 @@ export default function AuthPage() {
     }
 
     try {
+      console.log("Attempting Supabase signup with:", {
+        email: emailTrimmed,
+        passwordProvided: !!password?.trim(),
+      });
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
-        password: password.trim(),
+        password: password,
       });
 
       if (error) {
@@ -160,6 +185,7 @@ export default function AuthPage() {
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
+                        name="email"
                         id="email"
                         type="email"
                         placeholder="your@email.com"
@@ -173,6 +199,7 @@ export default function AuthPage() {
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
+                        name="signin-password"
                         id="signin-password"
                         type={showSignInPassword ? "text" : "password"}
                         placeholder="••••••••"
@@ -244,6 +271,7 @@ export default function AuthPage() {
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
+                        name="name"
                         id="name"
                         type="text"
                         placeholder="John Doe"
@@ -257,6 +285,7 @@ export default function AuthPage() {
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
+                        name="signup-email"
                         id="signup-email"
                         type="email"
                         placeholder="your@email.com"
@@ -270,6 +299,7 @@ export default function AuthPage() {
                     <div className="relative">
                       <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
+                        name="phone"
                         id="phone"
                         type="tel"
                         placeholder="+27 XX XXX XXXX"
@@ -283,6 +313,7 @@ export default function AuthPage() {
                     <div className="relative">
                       <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
+                        name="location"
                         id="location"
                         type="text"
                         placeholder="Cape Town, Johannesburg, etc."
@@ -296,6 +327,7 @@ export default function AuthPage() {
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
+                        name="signup-password"
                         id="signup-password"
                         type="password"
                         placeholder="••••••••"
