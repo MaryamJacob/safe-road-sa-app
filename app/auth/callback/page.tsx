@@ -16,7 +16,7 @@ export default function AuthCallbackPage() {
 
       if (session) {
         // user logged in
-        router.push("/dashboard");
+        router.push("/report");
       } else {
         // not logged in
         router.push("/auth");

@@ -41,6 +41,7 @@ import {
   X,
   Smartphone,
   Mail,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -198,10 +199,12 @@ export default function NotificationsPage() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center space-x-2">
-            <Shield className="h-6 w-6 text-primary" />
-            <a href="/" className="text-lg font-semibold">
-              <span className="font-bold text-primary">Profile</span>
+            <a href="/" className="text-lg font-bold">
+              <ArrowLeft />
             </a>
+            <Shield className="h-6 w-6 text-primary" />
+
+            <span className="font-bold text-primary">Profile</span>
           </div>
           <div className="relative">
             <Bell className="h-5 w-5" />

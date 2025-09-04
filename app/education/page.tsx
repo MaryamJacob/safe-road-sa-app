@@ -1,11 +1,17 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Shield,
   BookOpen,
@@ -25,36 +31,73 @@ import {
   Wrench,
   Clock,
   ExternalLink,
-} from "lucide-react"
-import Link from "next/link"
+  ArrowLeft,
+} from "lucide-react";
+import Link from "next/link";
 
 // Mock data for safety education
 const emergencyContacts = [
   {
     category: "Emergency Services",
     contacts: [
-      { name: "Police Emergency", number: "10111", description: "Crime, accidents, emergencies" },
-      { name: "Ambulance/Medical", number: "10177", description: "Medical emergencies" },
-      { name: "Fire Department", number: "10111", description: "Fire emergencies" },
+      {
+        name: "Police Emergency",
+        number: "10111",
+        description: "Crime, accidents, emergencies",
+      },
+      {
+        name: "Ambulance/Medical",
+        number: "10177",
+        description: "Medical emergencies",
+      },
+      {
+        name: "Fire Department",
+        number: "10111",
+        description: "Fire emergencies",
+      },
     ],
   },
   {
     category: "Roadside Assistance",
     contacts: [
-      { name: "AA Emergency Road Service", number: "0861 000 234", description: "24/7 roadside assistance" },
-      { name: "Outsurance", number: "0860 468 772", description: "Insurance roadside assistance" },
-      { name: "MiWay", number: "0860 649 292", description: "Insurance emergency assistance" },
+      {
+        name: "AA Emergency Road Service",
+        number: "0861 000 234",
+        description: "24/7 roadside assistance",
+      },
+      {
+        name: "Outsurance",
+        number: "0860 468 772",
+        description: "Insurance roadside assistance",
+      },
+      {
+        name: "MiWay",
+        number: "0860 649 292",
+        description: "Insurance emergency assistance",
+      },
     ],
   },
   {
     category: "Towing Services",
     contacts: [
-      { name: "National Towing", number: "0861 869 464", description: "24/7 towing service" },
-      { name: "City Towing", number: "011 234 5678", description: "Johannesburg area towing" },
-      { name: "Cape Towing", number: "021 345 6789", description: "Cape Town area towing" },
+      {
+        name: "National Towing",
+        number: "0861 869 464",
+        description: "24/7 towing service",
+      },
+      {
+        name: "City Towing",
+        number: "011 234 5678",
+        description: "Johannesburg area towing",
+      },
+      {
+        name: "Cape Towing",
+        number: "021 345 6789",
+        description: "Cape Town area towing",
+      },
     ],
   },
-]
+];
 
 const safetyTips = [
   {
@@ -84,7 +127,7 @@ const safetyTips = [
       "Don't resist during a hijacking - your life is more valuable than your car",
     ],
   },
-]
+];
 
 const tutorials = [
   {
@@ -93,7 +136,8 @@ const tutorials = [
     duration: "10 minutes",
     difficulty: "Beginner",
     category: "Vehicle Maintenance",
-    description: "Step-by-step guide to safely changing a flat tire on the roadside",
+    description:
+      "Step-by-step guide to safely changing a flat tire on the roadside",
     steps: [
       "Find a safe, flat location away from traffic",
       "Turn on hazard lights and apply parking brake",
@@ -133,7 +177,8 @@ const tutorials = [
     duration: "3 minutes",
     difficulty: "Critical",
     category: "Personal Safety",
-    description: "Essential safety protocols if you become a victim of hijacking",
+    description:
+      "Essential safety protocols if you become a victim of hijacking",
     steps: [
       "Stay calm and don't panic - your life is the priority",
       "Don't resist or fight back - comply with demands",
@@ -147,21 +192,23 @@ const tutorials = [
       "Report to nearest police station for case number",
     ],
   },
-]
+];
 
 const hotspots = [
   {
     area: "Johannesburg CBD",
     riskLevel: "High",
     commonCrimes: ["Hijacking", "Smash & Grab", "Robbery"],
-    safetyTips: "Avoid stopping at traffic lights, keep windows up, don't display valuables",
+    safetyTips:
+      "Avoid stopping at traffic lights, keep windows up, don't display valuables",
     bestTimes: "Avoid after 6 PM and weekends",
   },
   {
     area: "Cape Town N2 Highway",
     riskLevel: "Medium",
     commonCrimes: ["Stone throwing", "Hijacking"],
-    safetyTips: "Don't stop if stones are thrown, drive to nearest police station",
+    safetyTips:
+      "Don't stop if stones are thrown, drive to nearest police station",
     bestTimes: "Daylight hours preferred",
   },
   {
@@ -178,44 +225,50 @@ const hotspots = [
     safetyTips: "Be extra cautious approaching home, check for followers",
     bestTimes: "Vary arrival times",
   },
-]
+];
 
 export default function EducationPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedTutorial, setSelectedTutorial] = useState<(typeof tutorials)[0] | null>(null)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTutorial, setSelectedTutorial] = useState<
+    (typeof tutorials)[0] | null
+  >(null);
 
   const filteredTutorials = tutorials.filter(
     (tutorial) =>
       tutorial.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tutorial.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tutorial.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+      tutorial.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const getRiskBadge = (level: string) => {
     switch (level) {
       case "High":
-        return <Badge variant="destructive">High Risk</Badge>
+        return <Badge variant="destructive">High Risk</Badge>;
       case "Medium":
-        return <Badge className="bg-yellow-100 text-yellow-800">Medium Risk</Badge>
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800">Medium Risk</Badge>
+        );
       case "Low":
-        return <Badge className="bg-green-100 text-green-800">Low Risk</Badge>
+        return <Badge className="bg-green-100 text-green-800">Low Risk</Badge>;
       default:
-        return <Badge variant="outline">Unknown</Badge>
+        return <Badge variant="outline">Unknown</Badge>;
     }
-  }
+  };
 
   const getDifficultyBadge = (difficulty: string) => {
     switch (difficulty) {
       case "Critical":
-        return <Badge variant="destructive">Critical</Badge>
+        return <Badge variant="destructive">Critical</Badge>;
       case "Intermediate":
-        return <Badge className="bg-yellow-100 text-yellow-800">Intermediate</Badge>
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800">Intermediate</Badge>
+        );
       case "Beginner":
-        return <Badge className="bg-green-100 text-green-800">Beginner</Badge>
+        return <Badge className="bg-green-100 text-green-800">Beginner</Badge>;
       default:
-        return <Badge variant="outline">Unknown</Badge>
+        return <Badge variant="outline">Unknown</Badge>;
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -223,6 +276,9 @@ export default function EducationPage() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center space-x-2">
+            <a href="/" className="text-lg font-bold">
+              <ArrowLeft />
+            </a>
             <Shield className="h-6 w-6 text-primary" />
             <span className="font-bold text-primary">Safety Hub</span>
           </div>
@@ -231,26 +287,42 @@ export default function EducationPage() {
 
       <div className="container max-w-6xl mx-auto py-6 px-4">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Safety Education Hub</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">
+            Safety Education Hub
+          </h1>
           <p className="text-muted-foreground text-sm md:text-base">
-            Essential safety information, tutorials, and resources for South African road users.
+            Essential safety information, tutorials, and resources for South
+            African road users.
           </p>
         </div>
 
         <Tabs defaultValue="tutorials" className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="tutorials" className="text-xs md:text-sm">Tutorials</TabsTrigger>
-            <TabsTrigger value="safety-tips" className="text-xs md:text-sm">Safety Tips</TabsTrigger>
-            <TabsTrigger value="hotspots" className="text-xs md:text-sm">Risk Areas</TabsTrigger>
-            <TabsTrigger value="emergency" className="text-xs md:text-sm">Emergency</TabsTrigger>
+            <TabsTrigger value="tutorials" className="text-xs md:text-sm">
+              Tutorials
+            </TabsTrigger>
+            <TabsTrigger value="safety-tips" className="text-xs md:text-sm">
+              Safety Tips
+            </TabsTrigger>
+            <TabsTrigger value="hotspots" className="text-xs md:text-sm">
+              Risk Areas
+            </TabsTrigger>
+            <TabsTrigger value="emergency" className="text-xs md:text-sm">
+              Emergency
+            </TabsTrigger>
           </TabsList>
 
           {/* Tutorials Tab */}
           <TabsContent value="tutorials" className="space-y-6">
             <div className="flex flex-col gap-4">
               <div>
-                <h2 className="text-xl md:text-2xl font-bold">Safety Tutorials</h2>
-                <p className="text-muted-foreground text-sm">Learn essential skills for road safety and emergency situations</p>
+                <h2 className="text-xl md:text-2xl font-bold">
+                  Safety Tutorials
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  Learn essential skills for road safety and emergency
+                  situations
+                </p>
               </div>
               <div className="relative w-full">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -265,7 +337,10 @@ export default function EducationPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {filteredTutorials.map((tutorial) => (
-                <Card key={tutorial.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                <Card
+                  key={tutorial.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -282,8 +357,12 @@ export default function EducationPage() {
                       </div>
                       {getDifficultyBadge(tutorial.difficulty)}
                     </div>
-                    <CardTitle className="text-base md:text-lg">{tutorial.title}</CardTitle>
-                    <CardDescription className="text-sm">{tutorial.description}</CardDescription>
+                    <CardTitle className="text-base md:text-lg">
+                      {tutorial.title}
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      {tutorial.description}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between mb-4">
@@ -296,7 +375,10 @@ export default function EducationPage() {
                     </div>
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button className="w-full" onClick={() => setSelectedTutorial(tutorial)}>
+                        <Button
+                          className="w-full"
+                          onClick={() => setSelectedTutorial(tutorial)}
+                        >
                           View Tutorial
                         </Button>
                       </DialogTrigger>
@@ -312,7 +394,9 @@ export default function EducationPage() {
                             )}
                             {tutorial.title}
                           </DialogTitle>
-                          <DialogDescription>{tutorial.description}</DialogDescription>
+                          <DialogDescription>
+                            {tutorial.description}
+                          </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                           <div className="flex items-center gap-4">
@@ -323,7 +407,9 @@ export default function EducationPage() {
                             </div>
                           </div>
                           <div>
-                            <h4 className="font-medium mb-3">Step-by-Step Instructions:</h4>
+                            <h4 className="font-medium mb-3">
+                              Step-by-Step Instructions:
+                            </h4>
                             <ol className="space-y-2">
                               {tutorial.steps.map((step, index) => (
                                 <li key={index} className="flex gap-3">
@@ -339,10 +425,13 @@ export default function EducationPage() {
                             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
                               <div className="flex items-center gap-2 mb-2">
                                 <AlertTriangle className="h-4 w-4 text-destructive" />
-                                <span className="font-medium text-destructive">Important Safety Notice</span>
+                                <span className="font-medium text-destructive">
+                                  Important Safety Notice
+                                </span>
                               </div>
                               <p className="text-sm text-destructive/80">
-                                Your personal safety is the top priority. Never put yourself at additional risk.
+                                Your personal safety is the top priority. Never
+                                put yourself at additional risk.
                               </p>
                             </div>
                           )}
@@ -358,8 +447,12 @@ export default function EducationPage() {
           {/* Safety Tips Tab */}
           <TabsContent value="safety-tips" className="space-y-6">
             <div>
-              <h2 className="text-xl md:text-2xl font-bold">Safety Tips & Best Practices</h2>
-              <p className="text-muted-foreground text-sm">Essential safety guidelines for South African road conditions</p>
+              <h2 className="text-xl md:text-2xl font-bold">
+                Safety Tips & Best Practices
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                Essential safety guidelines for South African road conditions
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -394,15 +487,23 @@ export default function EducationPage() {
             {/* Additional Safety Resources */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base md:text-lg">Additional Safety Resources</CardTitle>
-                <CardDescription className="text-sm">External resources for comprehensive road safety education</CardDescription>
+                <CardTitle className="text-base md:text-lg">
+                  Additional Safety Resources
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  External resources for comprehensive road safety education
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
-                      <h4 className="font-medium text-sm md:text-base">Road Traffic Management Corporation</h4>
-                      <p className="text-sm text-muted-foreground">Official road safety guidelines</p>
+                      <h4 className="font-medium text-sm md:text-base">
+                        Road Traffic Management Corporation
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Official road safety guidelines
+                      </p>
                     </div>
                     <Button variant="outline" size="sm">
                       <ExternalLink className="h-4 w-4" />
@@ -410,8 +511,12 @@ export default function EducationPage() {
                   </div>
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
-                      <h4 className="font-medium text-sm md:text-base">South African Police Service</h4>
-                      <p className="text-sm text-muted-foreground">Crime prevention tips</p>
+                      <h4 className="font-medium text-sm md:text-base">
+                        South African Police Service
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Crime prevention tips
+                      </p>
                     </div>
                     <Button variant="outline" size="sm">
                       <ExternalLink className="h-4 w-4" />
@@ -427,7 +532,8 @@ export default function EducationPage() {
             <div>
               <h2 className="text-xl md:text-2xl font-bold">High-Risk Areas</h2>
               <p className="text-muted-foreground text-sm">
-                Known crime hotspots and safety information for major South African areas
+                Known crime hotspots and safety information for major South
+                African areas
               </p>
             </div>
 
@@ -445,10 +551,16 @@ export default function EducationPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <h4 className="font-medium mb-2 text-sm">Common Crimes:</h4>
+                      <h4 className="font-medium mb-2 text-sm">
+                        Common Crimes:
+                      </h4>
                       <div className="flex flex-wrap gap-2">
                         {hotspot.commonCrimes.map((crime, crimeIndex) => (
-                          <Badge key={crimeIndex} variant="outline" className="text-xs">
+                          <Badge
+                            key={crimeIndex}
+                            variant="outline"
+                            className="text-xs"
+                          >
                             {crime}
                           </Badge>
                         ))}
@@ -456,11 +568,17 @@ export default function EducationPage() {
                     </div>
                     <div>
                       <h4 className="font-medium mb-2 text-sm">Safety Tips:</h4>
-                      <p className="text-sm text-muted-foreground">{hotspot.safetyTips}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {hotspot.safetyTips}
+                      </p>
                     </div>
                     <div>
-                      <h4 className="font-medium mb-2 text-sm">Best Times to Travel:</h4>
-                      <p className="text-sm text-muted-foreground">{hotspot.bestTimes}</p>
+                      <h4 className="font-medium mb-2 text-sm">
+                        Best Times to Travel:
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {hotspot.bestTimes}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -477,7 +595,9 @@ export default function EducationPage() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium mb-3 text-sm">Before Traveling:</h4>
+                    <h4 className="font-medium mb-3 text-sm">
+                      Before Traveling:
+                    </h4>
                     <ul className="space-y-2 text-sm">
                       <li className="flex gap-2">
                         <span className="text-primary">•</span>
@@ -498,7 +618,9 @@ export default function EducationPage() {
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-medium mb-3 text-sm">While Traveling:</h4>
+                    <h4 className="font-medium mb-3 text-sm">
+                      While Traveling:
+                    </h4>
                     <ul className="space-y-2 text-sm">
                       <li className="flex gap-2">
                         <span className="text-primary">•</span>
@@ -526,9 +648,12 @@ export default function EducationPage() {
           {/* Emergency Contacts Tab */}
           <TabsContent value="emergency" className="space-y-6">
             <div>
-              <h2 className="text-xl md:text-2xl font-bold">Emergency Contacts</h2>
+              <h2 className="text-xl md:text-2xl font-bold">
+                Emergency Contacts
+              </h2>
               <p className="text-muted-foreground text-sm">
-                Essential phone numbers for emergencies, roadside assistance, and support services
+                Essential phone numbers for emergencies, roadside assistance,
+                and support services
               </p>
             </div>
 
@@ -544,14 +669,24 @@ export default function EducationPage() {
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {category.contacts.map((contact, contactIndex) => (
-                        <div key={contactIndex} className="p-4 border rounded-lg">
-                          <h4 className="font-medium mb-1 text-sm md:text-base">{contact.name}</h4>
+                        <div
+                          key={contactIndex}
+                          className="p-4 border rounded-lg"
+                        >
+                          <h4 className="font-medium mb-1 text-sm md:text-base">
+                            {contact.name}
+                          </h4>
                           <div className="text-lg font-bold text-primary mb-2">
-                            <a href={`tel:${contact.number}`} className="hover:underline">
+                            <a
+                              href={`tel:${contact.number}`}
+                              className="hover:underline"
+                            >
                               {contact.number}
                             </a>
                           </div>
-                          <p className="text-sm text-muted-foreground">{contact.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {contact.description}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -567,12 +702,16 @@ export default function EducationPage() {
                   <AlertTriangle className="h-5 w-5 text-secondary" />
                   Emergency Preparedness Checklist
                 </CardTitle>
-                <CardDescription className="text-sm">Keep these items in your vehicle at all times</CardDescription>
+                <CardDescription className="text-sm">
+                  Keep these items in your vehicle at all times
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium mb-3 text-sm">Essential Items:</h4>
+                    <h4 className="font-medium mb-3 text-sm">
+                      Essential Items:
+                    </h4>
                     <ul className="space-y-2 text-sm">
                       <li className="flex gap-2">
                         <span className="text-primary">✓</span>
@@ -601,7 +740,9 @@ export default function EducationPage() {
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-medium mb-3 text-sm">Important Documents:</h4>
+                    <h4 className="font-medium mb-3 text-sm">
+                      Important Documents:
+                    </h4>
                     <ul className="space-y-2 text-sm">
                       <li className="flex gap-2">
                         <span className="text-primary">✓</span>
@@ -636,5 +777,5 @@ export default function EducationPage() {
         </Tabs>
       </div>
     </div>
-  )
+  );
 }
