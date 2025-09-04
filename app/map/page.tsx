@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Shield, Navigation, Filter, Search, Clock, ThumbsUp, Users, Route, Zap, X, ChevronUp, FileText } from "lucide-react"
 import Link from "next/link"
+import MapComponent from "@/components/map"
+import { fetchCurrentLocation } from "@/components/current-location" // Current Location
 
 // Mock data for demonstration
 interface Report {
@@ -114,6 +116,26 @@ export default function MapPage() {
   const [showBottomSheet, setShowBottomSheet] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
 
+  // States for map's center and zoom
+  const [mapCenter, setMapCenter] = useState({ lat: -26.2041, lng: 28.0473 }); // Default to Johannesburg
+  const [mapZoom, setMapZoom] = useState(10); // Default zoom
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false)
+
+  // Function to handle the "My Location" button click
+  const handleMyLocationClick = async () => {
+    setIsFetchingLocation(true)
+    try {
+      const coords = await fetchCurrentLocation()
+      setMapCenter(coords) // Set the map center to the new coordinates
+      setMapZoom(15)        // Zoom in to a closer view
+    } catch (error: any) {
+      console.error("Error getting location:", error.message)
+      alert(`Could not get location: ${error.message}`)
+    } finally {
+      setIsFetchingLocation(false)
+    }
+  }
+
   useEffect(() => {
     let filtered = mockReports
 
@@ -201,46 +223,9 @@ export default function MapPage() {
       </header>
 
       {/* Full Screen Map */}
-      <div className="relative h-[calc(100vh-4rem)] bg-gradient-to-br from-green-50 to-blue-50">
-        {/* Mock Map */}
-        <div className="absolute inset-0 bg-gradient-to-br from-green-100 via-blue-50 to-gray-100">
-          {/* Map Grid Lines */}
-          <svg className="absolute inset-0 w-full h-full opacity-20">
-            <defs>
-              <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#94a3b8" strokeWidth="1" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-
-          {/* Mock Roads */}
-          <div className="absolute inset-0">
-            <div className="absolute top-1/4 left-0 right-0 h-2 bg-gray-400 opacity-60"></div>
-            <div className="absolute top-1/2 left-0 right-0 h-3 bg-gray-500 opacity-70"></div>
-            <div className="absolute top-3/4 left-0 right-0 h-2 bg-gray-400 opacity-60"></div>
-            <div className="absolute left-1/4 top-0 bottom-0 w-2 bg-gray-400 opacity-60"></div>
-            <div className="absolute left-1/2 top-0 bottom-0 w-3 bg-gray-500 opacity-70"></div>
-            <div className="absolute left-3/4 top-0 bottom-0 w-2 bg-gray-400 opacity-60"></div>
-          </div>
-
-          {/* Report Markers */}
-          {filteredReports.map((report) => (
-            <div
-              key={report.id}
-              className={`absolute w-6 h-6 rounded-full border-2 ${severityColors[report.severity]} ${
-                reportTypeColors[report.type]
-              } cursor-pointer hover:scale-110 transition-transform shadow-lg flex items-center justify-center text-white text-xs font-bold`}
-              style={{
-                left: `${report.location.x}%`,
-                top: `${report.location.y}%`,
-                transform: "translate(-50%, -50%)",
-              }}
-              onClick={() => setSelectedReport(report)}
-            >
-              {report.severity === "urgent" && <Zap className="h-3 w-3" />}
-            </div>
-          ))}
+      <div className="relative h-[calc(100vh-4rem)]">
+        <div className="absolute inset-0">
+          <MapComponent center={mapCenter} zoom={mapZoom} />
         </div>
 
         {/* Floating Action Button for Report */}
@@ -254,9 +239,9 @@ export default function MapPage() {
 
         {/* Map Controls */}
         <div className="absolute top-4 right-4 space-y-2">
-          <Button size="sm" variant="outline" className="bg-background/90">
-            <Navigation className="h-4 w-4 mr-2" />
-            My Location
+          <Button size="sm" variant="outline" className="bg-background/90" onClick={handleMyLocationClick} disabled={isFetchingLocation}>
+              <Navigation className="h-4 w-4 mr-2" />
+              {isFetchingLocation ? "Locating..." : "My Location"}
           </Button>
           <Button size="sm" variant="outline" className="bg-background/90">
             <Route className="h-4 w-4 mr-2" />

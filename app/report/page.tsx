@@ -1,3 +1,5 @@
+// safe-road-sa-app/app/report/page.tsx
+
 "use client"
 
 import type React from "react"
@@ -12,12 +14,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AlertTriangle, Camera, MapPin, Navigation, Shield, Users, Upload, CheckCircle } from "lucide-react"
+import { fetchCurrentLocation } from "@/components/current-location" // Current Location
+import LocationPickerMap from "@/components/location-picker-map"; // Location Picker Map
 
 export default function ReportPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedImages, setSelectedImages] = useState<File[]>([])
   const [currentLocation, setCurrentLocation] = useState<string>("")
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false) // Current Location Fetching State
+  const [isMapOpen, setIsMapOpen] = useState(false)
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -25,17 +32,26 @@ export default function ReportPage() {
     }
   }
 
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCurrentLocation(`${position.coords.latitude}, ${position.coords.longitude}`)
-        },
-        (error) => {
-          console.error("Error getting location:", error)
-        },
-      )
+  // Get Current Location
+  const getCurrentLocation = async () => {
+    setIsFetchingLocation(true)
+    try {
+      const coords = await fetchCurrentLocation()
+      // Format the coordinates to fit the existing string state
+      setCurrentLocation(`${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`)
+    } catch (error: any) {
+      console.error("Error getting location:", error.message)
+      // Optional: Show an alert or a toast message to the user
+      alert(`Could not get location: ${error.message}`)
+    } finally {
+      setIsFetchingLocation(false)
     }
+  }
+
+  // Handle Location Select
+  const handleLocationSelect = (coords: { lat: number, lng: number }) => {
+    setCurrentLocation(`${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`);
+    setIsMapOpen(false); // Close the dialog
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -148,9 +164,13 @@ export default function ReportPage() {
                         onChange={(e) => setCurrentLocation(e.target.value)}
                         className="flex-1"
                       />
-                      <Button type="button" variant="outline" onClick={getCurrentLocation} className="md:w-auto">
+                      <Button type="button" variant="outline" className="md:w-auto" onClick={() => setIsMapOpen(true)}>
+                          <MapPin className="h-4 w-4 mr-2" />
+                          <span>Pin on Map</span>
+                      </Button>
+                      <Button type="button" variant="outline" onClick={getCurrentLocation} className="md:w-auto" disabled={isFetchingLocation}>
                         <MapPin className="h-4 w-4 mr-2" />
-                        <span className="md:hidden">Get Location</span>
+                        <span className="md:hidden">{isFetchingLocation ? "Fetching..." : "Get Location"}</span>
                       </Button>
                     </div>
                   </div>
@@ -246,12 +266,16 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="infra-location">Location</Label>
-                    <div className="flex flex-col md:flex-row gap-2">
+                    <div className="flex flex-col md:flex-row gap-3">
                       <Input
                         id="infra-location"
                         placeholder="Enter intersection or street address"
                         className="flex-1"
                       />
+                      <Button type="button" variant="outline" className="md:w-auto" onClick={() => setIsMapOpen(true)}>
+                          <MapPin className="h-4 w-4 mr-2" />
+                          <span>Pin on Map</span>
+                      </Button>
                       <Button type="button" variant="outline" onClick={getCurrentLocation} className="md:w-auto">
                         <MapPin className="h-4 w-4 mr-2" />
                         <span className="md:hidden">Get Location</span>
@@ -439,6 +463,20 @@ export default function ReportPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        // Location Picker Map Dialog
+        <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Pin the Exact Location</DialogTitle>
+          </DialogHeader>
+          <LocationPickerMap 
+            onLocationSelect={handleLocationSelect} 
+            onClose={() => setIsMapOpen(false)} 
+          />
+        </DialogContent>
+      </Dialog>
+
       </div>
     </div>
   )
