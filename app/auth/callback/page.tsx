@@ -1,68 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
+    const handleCallback = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
+        console.error("Auth error:", error?.message);
         router.push("/auth");
         return;
       }
 
-      try {
-        // Call backend with Supabase access token
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+      const accessToken = data.session.access_token;
 
-        if (res.status === 401) {
-          // User not found → sign them up
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-              "Content-Type": "application/json",
-            },
-          });
-        }
+      // Call backend to insert into profiles
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
-        // Successful login or signup → redirect
-        router.push("/report");
-      } catch (err) {
-        console.error("Auth callback error:", err);
-        router.push("/auth");
-      } finally {
-        setLoading(false);
-      }
+      router.push("/dashboard"); // or wherever
     };
 
-    checkUser();
+    handleCallback();
   }, [router]);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
-  return null;
+  return <p className="text-center mt-20">Finishing sign-in…</p>;
 }
