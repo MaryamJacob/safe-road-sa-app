@@ -1,27 +1,52 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Shield, Navigation, Filter, Search, Clock, ThumbsUp, Users, Route, Zap, X, ChevronUp, FileText } from "lucide-react"
-import Link from "next/link"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Shield,
+  Navigation,
+  Filter,
+  Search,
+  Clock,
+  ThumbsUp,
+  Users,
+  Route,
+  Zap,
+  X,
+  ChevronUp,
+  FileText,
+} from "lucide-react";
+import Link from "next/link";
 
 // Mock data for demonstration
 interface Report {
-  id: number
-  type: 'pothole' | 'traffic-light' | 'obstruction' | 'debris' | 'accident'
-  severity: 'minor' | 'medium' | 'urgent'
-  location: { x: number; y: number }
-  address: string
-  description: string
-  timestamp: string
-  upvotes: number
-  status: 'reported' | 'verified' | 'in-progress' | 'emergency'
-  reporter: string
+  id: number;
+  type: "pothole" | "traffic-light" | "obstruction" | "debris" | "accident";
+  severity: "minor" | "medium" | "urgent";
+  location: { x: number; y: number };
+  address: string;
+  description: string;
+  timestamp: string;
+  upvotes: number;
+  status: "reported" | "verified" | "in-progress" | "emergency";
+  reporter: string;
 }
 
 const mockReports: Report[] = [
@@ -85,7 +110,7 @@ const mockReports: Report[] = [
     status: "emergency",
     reporter: "Emergency Services",
   },
-]
+];
 
 const reportTypeColors = {
   pothole: "bg-orange-500",
@@ -93,81 +118,85 @@ const reportTypeColors = {
   obstruction: "bg-yellow-500",
   debris: "bg-blue-500",
   accident: "bg-purple-500",
-}
+};
 
 const severityColors = {
   minor: "border-green-400",
   medium: "border-yellow-400",
   urgent: "border-red-500",
-}
+};
 
 export default function MapPage() {
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null)
-  const [filteredReports, setFilteredReports] = useState(mockReports)
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [filteredReports, setFilteredReports] = useState(mockReports);
   const [filters, setFilters] = useState({
     type: "all",
     severity: "all",
     status: "all",
     timeRange: "all",
-  })
-  const [searchQuery, setSearchQuery] = useState("")
-  const [showBottomSheet, setShowBottomSheet] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    let filtered = mockReports
+    let filtered = mockReports;
 
     if (filters.type !== "all") {
-      filtered = filtered.filter((report) => report.type === filters.type)
+      filtered = filtered.filter((report) => report.type === filters.type);
     }
     if (filters.severity !== "all") {
-      filtered = filtered.filter((report) => report.severity === filters.severity)
+      filtered = filtered.filter(
+        (report) => report.severity === filters.severity
+      );
     }
     if (filters.status !== "all") {
-      filtered = filtered.filter((report) => report.status === filters.status)
+      filtered = filtered.filter((report) => report.status === filters.status);
     }
     if (searchQuery) {
       filtered = filtered.filter(
         (report) =>
           report.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          report.description.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
+          report.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
 
-    setFilteredReports(filtered)
-  }, [filters, searchQuery])
+    setFilteredReports(filtered);
+  }, [filters, searchQuery]);
 
-  const getReportIcon = (type: Report['type']) => {
+  const getReportIcon = (type: Report["type"]) => {
     switch (type) {
       case "pothole":
-        return "🕳️"
+        return "🕳️";
       case "traffic-light":
-        return "🚦"
+        return "🚦";
       case "obstruction":
-        return "🚧"
+        return "🚧";
       case "debris":
-        return "🗑️"
+        return "🗑️";
       case "accident":
-        return "🚨"
+        return "🚨";
       default:
-        return "⚠️"
+        return "⚠️";
     }
-  }
+  };
 
-  const getStatusBadge = (status: Report['status']) => {
+  const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
       case "reported":
-        return <Badge variant="secondary">Reported</Badge>
+        return <Badge variant="secondary">Reported</Badge>;
       case "verified":
-        return <Badge className="bg-blue-100 text-blue-800">Verified</Badge>
+        return <Badge className="bg-blue-100 text-blue-800">Verified</Badge>;
       case "in-progress":
-        return <Badge className="bg-yellow-100 text-yellow-800">In Progress</Badge>
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800">In Progress</Badge>
+        );
       case "emergency":
-        return <Badge variant="destructive">Emergency</Badge>
+        return <Badge variant="destructive">Emergency</Badge>;
       default:
-        return <Badge variant="outline">Unknown</Badge>
+        return <Badge variant="outline">Unknown</Badge>;
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -176,7 +205,9 @@ export default function MapPage() {
         <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center space-x-2">
             <Shield className="h-6 w-6 text-primary" />
-            <span className="font-bold text-primary">SafeRoad SA</span>
+            <a href="/" className="text-lg font-semibold">
+              <span className="font-bold text-primary">SafeRoad SA</span>
+            </a>
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -185,7 +216,11 @@ export default function MapPage() {
               onClick={() => setShowBottomSheet(!showBottomSheet)}
               className="md:hidden"
             >
-              {showBottomSheet ? <X className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+              {showBottomSheet ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <ChevronUp className="h-4 w-4" />
+              )}
             </Button>
             <Button
               size="sm"
@@ -207,8 +242,18 @@ export default function MapPage() {
           {/* Map Grid Lines */}
           <svg className="absolute inset-0 w-full h-full opacity-20">
             <defs>
-              <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#94a3b8" strokeWidth="1" />
+              <pattern
+                id="grid"
+                width="50"
+                height="50"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M 50 0 L 0 0 0 50"
+                  fill="none"
+                  stroke="#94a3b8"
+                  strokeWidth="1"
+                />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#grid)" />
@@ -228,7 +273,9 @@ export default function MapPage() {
           {filteredReports.map((report) => (
             <div
               key={report.id}
-              className={`absolute w-6 h-6 rounded-full border-2 ${severityColors[report.severity]} ${
+              className={`absolute w-6 h-6 rounded-full border-2 ${
+                severityColors[report.severity]
+              } ${
                 reportTypeColors[report.type]
               } cursor-pointer hover:scale-110 transition-transform shadow-lg flex items-center justify-center text-white text-xs font-bold`}
               style={{
@@ -293,9 +340,11 @@ export default function MapPage() {
       </div>
 
       {/* Bottom Sheet for Mobile */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 ease-in-out ${
-        showBottomSheet ? 'translate-y-0' : 'translate-y-full'
-      }`}>
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 ease-in-out ${
+          showBottomSheet ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
         <div className="p-4">
           {/* Handle */}
           <div className="flex justify-center mb-4">
@@ -314,7 +363,12 @@ export default function MapPage() {
           </div>
 
           {/* Filter Toggle */}
-          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="w-full mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="w-full mb-4"
+          >
             <Filter className="h-4 w-4 mr-2" />
             Filters
           </Button>
@@ -323,15 +377,24 @@ export default function MapPage() {
           {showFilters && (
             <div className="space-y-4 mb-4 p-4 bg-muted/50 rounded-lg">
               <div>
-                <label className="text-sm font-medium mb-2 block">Report Type</label>
-                <Select value={filters.type} onValueChange={(value) => setFilters({ ...filters, type: value })}>
+                <label className="text-sm font-medium mb-2 block">
+                  Report Type
+                </label>
+                <Select
+                  value={filters.type}
+                  onValueChange={(value) =>
+                    setFilters({ ...filters, type: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="pothole">Potholes</SelectItem>
-                    <SelectItem value="traffic-light">Traffic Lights</SelectItem>
+                    <SelectItem value="traffic-light">
+                      Traffic Lights
+                    </SelectItem>
                     <SelectItem value="obstruction">Obstructions</SelectItem>
                     <SelectItem value="debris">Debris</SelectItem>
                     <SelectItem value="accident">Accidents</SelectItem>
@@ -340,10 +403,14 @@ export default function MapPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Severity</label>
+                <label className="text-sm font-medium mb-2 block">
+                  Severity
+                </label>
                 <Select
                   value={filters.severity}
-                  onValueChange={(value) => setFilters({ ...filters, severity: value })}
+                  onValueChange={(value) =>
+                    setFilters({ ...filters, severity: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -359,7 +426,12 @@ export default function MapPage() {
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Status</label>
-                <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
+                <Select
+                  value={filters.status}
+                  onValueChange={(value) =>
+                    setFilters({ ...filters, status: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -378,8 +450,12 @@ export default function MapPage() {
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-2 mb-4">
             <Card className="p-3">
-              <div className="text-2xl font-bold text-destructive">{filteredReports.length}</div>
-              <div className="text-xs text-muted-foreground">Active Reports</div>
+              <div className="text-2xl font-bold text-destructive">
+                {filteredReports.length}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Active Reports
+              </div>
             </Card>
             <Card className="p-3">
               <div className="text-2xl font-bold text-secondary">
@@ -391,7 +467,9 @@ export default function MapPage() {
 
           {/* Reports List */}
           <div className="mb-4">
-            <h3 className="font-medium mb-3">Recent Reports ({filteredReports.length})</h3>
+            <h3 className="font-medium mb-3">
+              Recent Reports ({filteredReports.length})
+            </h3>
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {filteredReports.map((report) => (
                 <Card
@@ -402,9 +480,13 @@ export default function MapPage() {
                   <CardContent className="p-3">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">{getReportIcon(report.type)}</span>
+                        <span className="text-lg">
+                          {getReportIcon(report.type)}
+                        </span>
                         <div>
-                          <div className="font-medium text-sm">{report.address}</div>
+                          <div className="font-medium text-sm">
+                            {report.address}
+                          </div>
                           <div className="text-xs text-muted-foreground flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {report.timestamp}
@@ -413,7 +495,9 @@ export default function MapPage() {
                       </div>
                       {getStatusBadge(report.status)}
                     </div>
-                    <p className="text-xs text-muted-foreground mb-2">{report.description}</p>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {report.description}
+                    </p>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <ThumbsUp className="h-3 w-3" />
@@ -425,8 +509,8 @@ export default function MapPage() {
                           report.severity === "urgent"
                             ? "border-red-500 text-red-700"
                             : report.severity === "medium"
-                              ? "border-yellow-500 text-yellow-700"
-                              : "border-green-500 text-green-700"
+                            ? "border-yellow-500 text-yellow-700"
+                            : "border-green-500 text-green-700"
                         }`}
                       >
                         {report.severity}
@@ -441,17 +525,23 @@ export default function MapPage() {
       </div>
 
       {/* Report Detail Dialog */}
-      <Dialog open={!!selectedReport} onOpenChange={() => setSelectedReport(null)}>
+      <Dialog
+        open={!!selectedReport}
+        onOpenChange={() => setSelectedReport(null)}
+      >
         <DialogContent className="max-w-md mx-4">
           {selectedReport && (
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <span className="text-2xl">{getReportIcon(selectedReport.type)}</span>
+                  <span className="text-2xl">
+                    {getReportIcon(selectedReport.type)}
+                  </span>
                   {selectedReport.address}
                 </DialogTitle>
                 <DialogDescription>
-                  Reported {selectedReport.timestamp} by {selectedReport.reporter}
+                  Reported {selectedReport.timestamp} by{" "}
+                  {selectedReport.reporter}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -463,8 +553,8 @@ export default function MapPage() {
                       selectedReport.severity === "urgent"
                         ? "border-red-500 text-red-700"
                         : selectedReport.severity === "medium"
-                          ? "border-yellow-500 text-yellow-700"
-                          : "border-green-500 text-green-700"
+                        ? "border-yellow-500 text-yellow-700"
+                        : "border-green-500 text-green-700"
                     }
                   >
                     {selectedReport.severity} severity
@@ -493,5 +583,5 @@ export default function MapPage() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
