@@ -4,6 +4,7 @@ import { Playfair_Display, Source_Sans_3 } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import AppLayout from "@/components/AppLayout"
+import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 const playfairDisplay = Playfair_Display({
@@ -33,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* PWA-specific meta tags */}
         <meta name="theme-color" content="#ffffff" />
@@ -46,10 +47,12 @@ export default function RootLayout({
         <meta name="description" content="Making South African Roads Safer Together." />
       </head>
       <body className={`font-sans ${playfairDisplay.variable} ${sourceSans.variable} antialiased`}>
-        <AppLayout>
-          <Suspense fallback={null}>{children}</Suspense>
-        </AppLayout>
-        <Analytics />
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <AppLayout>
+            <Suspense fallback={null}>{children}</Suspense>
+          </AppLayout>
+          <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -30,6 +30,7 @@ import {
   Smartphone,
   Mail,
 } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 import Link from "next/link"
 
 // Mock data for notifications
@@ -406,6 +407,24 @@ export default function NotificationsPage() {
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
             <h2 className="text-lg md:text-xl font-semibold">Notification Settings</h2>
+
+            {/* Theme toggle moved here */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base md:text-lg">Appearance</CardTitle>
+                <CardDescription className="text-sm">Switch between light, dark, or system theme</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ThemeToggle />
+              </CardContent>
+            </Card>
+
+            {/* Hoem button */}
+            <div>
+              <Button asChild variant="outline">
+                <Link href="/">hoem</Link>
+              </Button>
+            </div>
 
             <Card>
               <CardHeader className="pb-3">
