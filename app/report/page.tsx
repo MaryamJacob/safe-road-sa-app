@@ -86,6 +86,12 @@ export default function ReportPage() {
   const submitReport = async (type: string, payload: Record<string, any>, withPhotos = false) => {
     setIsSubmitting(true)
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001'
+      const endpoint = `${apiUrl}/api/reports/${type}`
+      
+      console.log("API URL:", apiUrl)
+      console.log("Endpoint:", endpoint)
+      
       let res
       if (withPhotos) {
         const formData = new FormData()
@@ -95,24 +101,33 @@ export default function ReportPage() {
         selectedImages.forEach((file) => {
           formData.append("photos", file)
         })
-        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${type}`, {
+        console.log("Sending FormData with photos")
+        res = await fetch(endpoint, {
           method: "POST",
           body: formData,
         })
       } else {
-        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${type}`, {
+        console.log("Sending JSON payload:", JSON.stringify(payload))
+        res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         })
       }
 
+      if (!res.ok) {
+        const errorData = await res.text()
+        console.error(`HTTP ${res.status}: ${res.statusText}`)
+        console.error("Error response:", errorData)
+        throw new Error(`HTTP ${res.status}: ${res.statusText} - ${errorData}`)
+      }
+
       const data = await res.json()
       console.log("✅ Report submitted:", data)
       alert("Report submitted successfully!")
     } catch (err) {
-      console.error(err)
-      alert("Failed to submit report.")
+      console.error("Submission error:", err)
+      alert(`Failed to submit report: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setIsSubmitting(false)
       setSelectedImages([])
@@ -122,11 +137,22 @@ export default function ReportPage() {
   // Hazard form submission handler
   const handleHazardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
     if (!currentLocation) {
       alert("Please set a location for the report.");
       return;
     }
+    if (!hazardType) {
+      alert("Please select a hazard type.");
+      return;
+    }
+    if (!description.trim()) {
+      alert("Please provide a description.");
+      return;
+    }
 
+    // Try the exact structure from temp-page.tsx
     const payload = {
       hazard_type: hazardType,
       severity: severity,
@@ -134,11 +160,19 @@ export default function ReportPage() {
       description: description,
     };
 
-    // Call the generic submission function
-    await submitReport('hazard', payload, selectedImages.length > 0);
+    console.log("Submitting hazard report with payload:", payload);
+    console.log("Selected images:", selectedImages.length);
 
-    // Redirect after successful submission
-    router.push('/');
+    try {
+      // Call the generic submission function
+      await submitReport('hazard', payload, selectedImages.length > 0);
+      
+      // Only redirect if submission was successful
+      router.push('/');
+    } catch (error) {
+      console.error("Hazard submission failed:", error);
+      // Don't redirect on error - let the submitReport function handle the error display
+    }
   };
 
   // Infrastructure form submission handler
@@ -250,10 +284,10 @@ export default function ReportPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="pothole">Pothole</SelectItem>
-                          <SelectItem value="obstruction">Road Obstruction</SelectItem>
-                          <SelectItem value="debris">Debris on Road</SelectItem>
-                          <SelectItem value="accident">Accident Scene</SelectItem>
-                          <SelectItem value="flooding">Road Flooding</SelectItem>
+                          <SelectItem value="road obstruction">Road Obstruction</SelectItem>
+                          <SelectItem value="debris on road">Debris on Road</SelectItem>
+                          <SelectItem value="accident scene">Accident Scene</SelectItem>
+                          <SelectItem value="road flooding">Road Flooding</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
@@ -373,12 +407,12 @@ export default function ReportPage() {
                           <SelectValue placeholder="Select request type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="traffic-light">New Traffic Light</SelectItem>
-                          <SelectItem value="turning-arrow">Add Turning Arrow</SelectItem>
-                          <SelectItem value="stop-sign">New Stop Sign</SelectItem>
-                          <SelectItem value="speed-bump">Speed Bump</SelectItem>
-                          <SelectItem value="pedestrian-crossing">Pedestrian Crossing</SelectItem>
-                          <SelectItem value="road-marking">Road Marking</SelectItem>
+                          <SelectItem value="new traffic light">New Traffic Light</SelectItem>
+                          <SelectItem value="add turning arrow">Add Turning Arrow</SelectItem>
+                          <SelectItem value="new stop sign">New Stop Sign</SelectItem>
+                          <SelectItem value="speed bump">Speed Bump</SelectItem>
+                          <SelectItem value="pedestrian crossing">Pedestrian Crossing</SelectItem>
+                          <SelectItem value="road marking">Road Marking</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
@@ -391,9 +425,9 @@ export default function ReportPage() {
                           <SelectValue placeholder="Select priority" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="low">Low Priority</SelectItem>
-                          <SelectItem value="medium">Medium Priority</SelectItem>
-                          <SelectItem value="high">High Priority</SelectItem>
+                          <SelectItem value="low priority">Low Priority</SelectItem>
+                          <SelectItem value="medium priority">Medium Priority</SelectItem>
+                          <SelectItem value="high priority">High Priority</SelectItem>
                           <SelectItem value="urgent">Urgent</SelectItem>
                         </SelectContent>
                       </Select>
@@ -473,12 +507,12 @@ export default function ReportPage() {
                           <SelectValue placeholder="Select fault type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="completely-off">Completely Off</SelectItem>
-                          <SelectItem value="one-direction">One Direction Not Working</SelectItem>
-                          <SelectItem value="stuck-red">Stuck on Red</SelectItem>
-                          <SelectItem value="stuck-green">Stuck on Green</SelectItem>
+                          <SelectItem value="completely off">Completely Off</SelectItem>
+                          <SelectItem value="one direction not working">One Direction Not Working</SelectItem>
+                          <SelectItem value="stuck on red">Stuck on Red</SelectItem>
+                          <SelectItem value="stuck on green">Stuck on Green</SelectItem>
                           <SelectItem value="flashing">Flashing/Intermittent</SelectItem>
-                          <SelectItem value="timing-issue">Timing Issues</SelectItem>
+                          <SelectItem value="timing issues">Timing Issues</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -490,11 +524,11 @@ export default function ReportPage() {
                           <SelectValue placeholder="Select affected lanes" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Directions</SelectItem>
+                          <SelectItem value="all directions">All Directions</SelectItem>
                           <SelectItem value="north-south">North-South</SelectItem>
                           <SelectItem value="east-west">East-West</SelectItem>
-                          <SelectItem value="single-lane">Single Lane</SelectItem>
-                          <SelectItem value="turning-lane">Turning Lane Only</SelectItem>
+                          <SelectItem value="single lane">Single Lane</SelectItem>
+                          <SelectItem value="turning lane only">Turning Lane Only</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -564,10 +598,10 @@ export default function ReportPage() {
                         <SelectValue placeholder="Select request type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="traffic-director">Traffic Director</SelectItem>
-                        <SelectItem value="emergency-response">Emergency Response</SelectItem>
-                        <SelectItem value="accident-management">Accident Management</SelectItem>
-                        <SelectItem value="event-support">Event Traffic Support</SelectItem>
+                        <SelectItem value="traffic director">Traffic Director</SelectItem>
+                        <SelectItem value="emergency response">Emergency Response</SelectItem>
+                        <SelectItem value="accident management">Accident Management</SelectItem>
+                        <SelectItem value="event traffic support">Event Traffic Support</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
