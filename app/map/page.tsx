@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -52,20 +52,22 @@ export default function MapPage() {
     let filtered = reports // Start with the master list from the store
 
     if (filters.type !== "all") {
-      filtered = filtered.filter((report) => report.type === filters.type)
+      filtered = filtered.filter((report) => report.type === filters.type);
     }
     if (filters.severity !== "all") {
-      filtered = filtered.filter((report) => report.severity === filters.severity)
+      filtered = filtered.filter(
+        (report) => report.severity === filters.severity
+      );
     }
     if (filters.status !== "all") {
-      filtered = filtered.filter((report) => report.status === filters.status)
+      filtered = filtered.filter((report) => report.status === filters.status);
     }
     if (searchQuery) {
       filtered = filtered.filter(
         (report) =>
           report.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          report.description.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
+          report.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
 
     setFilteredReports(filtered)
@@ -81,9 +83,9 @@ export default function MapPage() {
       case "accident": return "🚨";
       default: return "⚠️";
     }
-  }
+  };
 
-  const getStatusBadge = (status: Report['status']) => {
+  const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
       case "reported": return <Badge variant="secondary">Reported</Badge>;
       case "verified": return <Badge className="bg-blue-100 text-blue-800">Verified</Badge>;
@@ -91,7 +93,7 @@ export default function MapPage() {
       case "emergency": return <Badge variant="destructive">Emergency</Badge>;
       default: return <Badge variant="outline">Unknown</Badge>;
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,7 +102,9 @@ export default function MapPage() {
         <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center space-x-2">
             <Shield className="h-6 w-6 text-primary" />
-            <span className="font-bold text-primary">SafeRoad SA</span>
+            <a href="/" className="text-lg font-semibold">
+              <span className="font-bold text-primary">SafeRoad SA</span>
+            </a>
           </div>
           <div className="flex items-center space-x-2">
             <Button size="sm" variant="outline" onClick={() => setShowBottomSheet(!showBottomSheet)} className="md:hidden">
@@ -334,11 +338,14 @@ export default function MapPage() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <span className="text-2xl">{getReportIcon(selectedReport.type)}</span>
+                  <span className="text-2xl">
+                    {getReportIcon(selectedReport.type)}
+                  </span>
                   {selectedReport.address}
                 </DialogTitle>
                 <DialogDescription>
-                  Reported {selectedReport.timestamp} by {selectedReport.reporter}
+                  Reported {selectedReport.timestamp} by{" "}
+                  {selectedReport.reporter}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -350,8 +357,8 @@ export default function MapPage() {
                       selectedReport.severity === "urgent"
                         ? "border-red-500 text-red-700"
                         : selectedReport.severity === "medium"
-                          ? "border-yellow-500 text-yellow-700"
-                          : "border-green-500 text-green-700"
+                        ? "border-yellow-500 text-yellow-700"
+                        : "border-green-500 text-green-700"
                     }
                   >
                     {selectedReport.severity} severity
@@ -380,5 +387,5 @@ export default function MapPage() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
