@@ -46,6 +46,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import Link from "next/link"
 import PlacesAutocomplete from "@/components/places-autocomplete";
 import MapComponent from '@/components/map';
+import { supabase } from "@/lib/supabaseClient";
 
 // Mock data for notifications
 const mockNotifications = [
@@ -94,16 +95,16 @@ const mockNotifications = [
 interface RouteData {
   id: number;
   name: string;
-  from: string;
-  to: string;
+  from_address: string; // <-- New property name
+  to_address: string;   // <-- New property name
   active: boolean;
   polyline?: string; // Polyline to store the route path
 }
 
 const mockRoutes: RouteData[] = [
-  { id: 1, name: "Home to Work", from: "123 Home St, Johannesburg", to: "456 Office Ave, Sandton", active: true },
-  { id: 2, name: "Home to School", from: "123 Home St, Johannesburg", to: "789 School Rd, Soweto", active: true },
-  { id: 3, name: "Weekend Route", from: "123 Home St, Johannesburg", to: "Mall Plaza, Randburg", active: false },
+  { id: 1, name: "Home to Work", from_address: "123 Home St, Johannesburg", to_address: "456 Office Ave, Sandton", active: true },
+  { id: 2, name: "Home to School", from_address: "123 Home St, Johannesburg", to_address: "789 School Rd, Soweto", active: true },
+  { id: 3, name: "Weekend Route", from_address: "123 Home St, Johannesburg", to_address: "Mall Plaza, Randburg", active: false },
 ];
 
 // Libraries for Google Maps API
@@ -179,35 +180,60 @@ export default function NotificationsPage() {
       return;
     }
     setIsAdding(true);
-    try {
-      const newRouteData = {
-        name: routeName,
-        from: directionsResponse.routes[0].legs[0].start_address,
-        to: directionsResponse.routes[0].legs[0].end_address,
-        polyline: directionsResponse.routes[0].overview_polyline,
-        active: true,
-      };
 
-      // This is your placeholder POST request
-      const response = await fetch('/api/routes', {
+    // 1. Prepare the data for the backend
+    const newRouteData = {
+      name: routeName,
+      from_address: directionsResponse.routes[0].legs[0].start_address,
+      to_address: directionsResponse.routes[0].legs[0].end_address,
+      polyline: directionsResponse.routes[0].overview_polyline || "",
+    };
+
+    console.log("Sending route data:", newRouteData);
+
+    // 2. Optimistically update the UI
+    const tempId = Date.now();
+    setRoutes((prevRoutes) => [...prevRoutes, { ...newRouteData, id: tempId, active: true }]);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+      const endpoint = `${apiUrl}/api/routes`;
+
+      // Send the data to the backend without authentication
+      const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(newRouteData),
       });
-      if (!response.ok) throw new Error('Failed to save route.');
 
-      setRoutes((prevRoutes) => [...prevRoutes, { ...newRouteData, id: prevRoutes.length + 1 }]);
-      
-      // Reset form and close dialog
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("Backend error response:", errorData);
+        throw new Error(`Failed to save the route to the server: ${response.status} ${response.statusText}`);
+      }
+
+      // Reset form and close dialog on success
       setRouteName("");
       setOrigin(null);
       setDestination(null);
       setDirectionsResponse(null);
       setDialogOpen(false);
+
     } catch (error) {
       console.error("Failed to save route:", error);
-      alert("An error occurred while saving the route.");
-    } finally {
+      
+      // Check if the error is an actual Error object
+      if (error instanceof Error) {
+        alert(`Failed to save your route: ${error.message}`);
+      } else {
+        alert("An unknown error occurred while saving your route.");
+      }
+  
+      // Roll back the optimistic update if the API call fails
+      setRoutes((prevRoutes) => prevRoutes.filter(route => route.id !== tempId));
+    }finally {
       setIsAdding(false);
     }
   };
@@ -484,11 +510,11 @@ export default function NotificationsPage() {
                         <div className="text-sm text-muted-foreground space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">From:</span>
-                            {route.from}
+                            {route.from_address}
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="font-medium">To:</span>
-                            {route.to}
+                            {route.to_address}
                           </div>
                         </div>
                       </div>
