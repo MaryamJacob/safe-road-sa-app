@@ -496,14 +496,9 @@ export default function NotificationsPage() {
               <span className="font-bold text-primary">Profile</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="relative">
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                    {unreadCount}
-                  </Badge>
-                )}
-              </div>
+              <Button asChild size="sm">
+                <Link href="/auth">Sign In</Link>
+              </Button>
               {mounted && (
                 <Button
                   size="sm"
@@ -518,10 +513,17 @@ export default function NotificationsPage() {
           </div>
         </header>
 
+        {/* Header action button */}
+        <div className="container px-4 py-3">
+          <Button asChild className="w-full">
+            <Link href="/">View more info</Link>
+          </Button>
+        </div>
+
         <div className="container max-w-4xl mx-auto py-6">
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold mb-2">
-              Notifications & Alerts
+              Your Profile
             </h1>
             <p className="text-muted-foreground text-sm md:text-base">
               Stay informed about road safety issues on your routes and in your
@@ -845,12 +847,7 @@ export default function NotificationsPage() {
                 </CardContent>
               </Card>
 
-              {/* Home button */}
-              <div>
-                <Button asChild variant="outline">
-                  <Link href="/">Home</Link>
-                </Button>
-              </div>
+              
 
               <Card>
                 <CardHeader className="pb-3">
