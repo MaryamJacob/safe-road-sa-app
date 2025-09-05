@@ -29,7 +29,7 @@ export default function MapPage() {
   }, []);
   
   // GET all state and actions from the global Zustand store
-  const { center, zoom, reports, setMapView } = useMapStore();
+  const { center, zoom, reports, setMapView, setReports } = useMapStore();
 
   // This local state is still needed to hold the *filtered* version of the reports for the list
   const [filteredReports, setFilteredReports] = useState(reports);
@@ -80,6 +80,86 @@ export default function MapPage() {
   const [origin, setOrigin] = useState<google.maps.places.PlaceResult | null>(null);
   const [destination, setDestination] = useState<google.maps.places.PlaceResult | null>(null);
   const [directionsResponse, setDirectionsResponse] = useState<google.maps.DirectionsResult | null>(null);
+
+  // Fetch reports from backend and populate the global store
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+        const endpoint = `${apiUrl}/api/reports`;
+        const res = await fetch(endpoint, { headers: { 'Content-Type': 'application/json' } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        const normalized = convertBackendReportsToStoreReports(data);
+        if (normalized.length) setReports(normalized);
+      } catch (err) {
+        console.warn('Failed to fetch backend reports; using existing store reports');
+      }
+    };
+    fetchReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const parseLatLng = (value: string): { lat: number; lng: number } | null => {
+    const match = value?.trim().match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*$/);
+    if (!match) return null;
+    const lat = parseFloat(match[1]);
+    const lng = parseFloat(match[2]);
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+    return { lat, lng };
+  };
+
+  const mapHazardToType = (hazardType: string): Report['type'] => {
+    const h = (hazardType || '').toLowerCase();
+    if (h.includes('pothole')) return 'pothole';
+    if (h.includes('obstruction')) return 'obstruction';
+    if (h.includes('debris')) return 'debris';
+    if (h.includes('accident')) return 'accident';
+    return 'obstruction';
+  };
+
+  const convertBackendReportsToStoreReports = (backend: any): Report[] => {
+    const out: Report[] = [];
+    // Road hazards
+    if (Array.isArray(backend?.road_hazards)) {
+      for (const item of backend.road_hazards) {
+        const coords = typeof item.location === 'string' ? parseLatLng(item.location) : null;
+        if (!coords) continue;
+        out.push({
+          id: out.length + 1,
+          type: mapHazardToType(item.hazard_type || ''),
+          severity: (item.severity || 'medium') as Report['severity'],
+          location: coords,
+          address: item.location,
+          description: item.description || item.hazard_type || 'Hazard',
+          timestamp: new Date(item.created_at || Date.now()).toLocaleTimeString(),
+          upvotes: 0,
+          status: 'reported',
+          reporter: 'Backend',
+        });
+      }
+    }
+    // Traffic lights
+    if (Array.isArray(backend?.traffic_light_reports)) {
+      for (const item of backend.traffic_light_reports) {
+        const coords = typeof item.intersection === 'string' ? parseLatLng(item.intersection) : null;
+        if (!coords) continue;
+        out.push({
+          id: out.length + 1,
+          type: 'traffic-light',
+          severity: 'urgent',
+          location: coords,
+          address: item.intersection,
+          description: `${item.fault_type || 'Traffic light issue'}${item.traffic_impact ? ` - ${item.traffic_impact}` : ''}`,
+          timestamp: new Date(item.created_at || Date.now()).toLocaleTimeString(),
+          upvotes: 0,
+          status: 'reported',
+          reporter: 'Backend',
+        });
+      }
+    }
+    return out;
+  };
 
   // Calculate route function
   const calculateRoute = async () => {

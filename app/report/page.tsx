@@ -37,6 +37,7 @@ export default function ReportPage() {
   const [currentLocation, setCurrentLocation] = useState<string>("")
   const [isFetchingLocation, setIsFetchingLocation] = useState(false) // Current Location Fetching State
   const [isMapOpen, setIsMapOpen] = useState(false)
+  const [locationTarget, setLocationTarget] = useState<null | 'hazard' | 'infra' | 'traffic' | 'emergency'>(null)
   const [notifications, setNotifications] = useState<Array<{
     id: number;
     type: "urgent" | "warning" | "info" | "safety" | "success" | "error";
@@ -53,6 +54,51 @@ export default function ReportPage() {
 
   const removeNotification = (id: number) => {
     setNotifications(prev => prev.filter(notif => notif.id !== id));
+  };
+
+  // Coordinate parsing and geocoding helpers
+  const parseLatLng = (value: string): { lat: number; lng: number } | null => {
+    const match = value.trim().match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*$/);
+    if (!match) return null;
+    const lat = parseFloat(match[1]);
+    const lng = parseFloat(match[2]);
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+    return { lat, lng };
+  };
+
+  const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      if (!(window as any).google || !(window as any).google.maps) return null;
+      const geocoder = new (window as any).google.maps.Geocoder();
+      const result: google.maps.GeocoderResult[] = await new Promise((resolve, reject) => {
+        geocoder.geocode({ address }, (results: google.maps.GeocoderResult[], status: google.maps.GeocoderStatus) => {
+          if (status === 'OK' && results && results.length) resolve(results);
+          else reject(new Error(`Geocoding failed: ${status}`));
+        });
+      });
+      const location = result[0].geometry.location;
+      return { lat: location.lat(), lng: location.lng() };
+    } catch (e) {
+      console.error('geocodeAddress error', e);
+      return null;
+    }
+  };
+
+  const resolveCoords = async (input: string): Promise<{ lat: number; lng: number } | null> => {
+    const parsed = parseLatLng(input);
+    if (parsed) return parsed;
+    return await geocodeAddress(input);
+  };
+
+  const mapHazardTypeToReportType = (hazard: string): Report['type'] => {
+    const h = hazard.toLowerCase();
+    if (h.includes('pothole')) return 'pothole';
+    if (h.includes('obstruction')) return 'obstruction';
+    if (h.includes('debris')) return 'debris';
+    if (h.includes('accident')) return 'accident';
+    // fallbacks
+    if (h.includes('flood')) return 'obstruction';
+    return 'obstruction';
   };
 
   // Form state variables for all tabs
@@ -102,8 +148,19 @@ export default function ReportPage() {
 
   // Handle Location Select
   const handleLocationSelect = (coords: { lat: number, lng: number }) => {
-    setCurrentLocation(`${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`);
+    const formatted = `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
+    if (locationTarget === 'infra') {
+      setInfraLocation(formatted);
+    } else if (locationTarget === 'traffic') {
+      setIntersection(formatted);
+    } else if (locationTarget === 'emergency') {
+      setEmergencyLocation(formatted);
+    } else {
+      // default to hazard for backward compatibility
+      setCurrentLocation(formatted);
+    }
     setIsMapOpen(false); // Close the dialog
+    setLocationTarget(null);
   }
 
   // Generic submission function from temp-page.tsx
@@ -190,7 +247,21 @@ export default function ReportPage() {
     try {
       // Call the generic submission function
       await submitReport('hazard', payload, selectedImages.length > 0);
-      
+
+      // Resolve coordinates and optimistically add to the map store
+      const coords = await resolveCoords(currentLocation);
+      if (coords) {
+        addReport({
+          type: mapHazardTypeToReportType(hazardType),
+          severity: severity as Report['severity'],
+          location: coords,
+          address: currentLocation,
+          description: description,
+          upvotes: 0,
+          status: 'reported',
+        });
+      }
+
       // Reset form after successful submission
       setHazardType("");
       setSeverity("medium");
@@ -248,6 +319,20 @@ export default function ReportPage() {
     };
 
     await submitReport('traffic-light', payload);
+
+    // Resolve intersection and optimistically add a traffic-light report
+    const coords = await resolveCoords(intersection);
+    if (coords) {
+      addReport({
+        type: 'traffic-light',
+        severity: 'urgent',
+        location: coords,
+        address: intersection,
+        description: `Traffic light issue: ${faultType || 'unspecified'}. Impact: ${trafficImpact || 'unspecified'}. Lanes: ${affectedLanes || 'unspecified'}`,
+        upvotes: 0,
+        status: 'reported',
+      });
+    }
     
     // Reset form after successful submission
     setFaultType("");
@@ -388,13 +473,12 @@ export default function ReportPage() {
                     <div className="flex flex-col gap-2">
                       <Input
                         id="location"
-                        placeholder="Enter street address or intersection"
                         value={currentLocation}
                         onChange={(e) => setCurrentLocation(e.target.value)}
                         className="w-full border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                       <div className="flex flex-col md:flex-row gap-2">
-                        <Button type="button" variant="outline" className="w-full md:w-auto" onClick={() => setIsMapOpen(true)}>
+                        <Button type="button" variant="outline" className="w-full md:w-auto" onClick={() => { setLocationTarget('hazard'); setIsMapOpen(true); }}>
                             <MapPin className="h-4 w-4 mr-2" />
                             <span>Pin on Map</span>
                         </Button>
@@ -515,11 +599,10 @@ export default function ReportPage() {
                         id="infra-location"
                         value={infraLocation}
                         onChange={(e) => setInfraLocation(e.target.value)}
-                        placeholder="Enter intersection or street address"
                         className="w-full border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
                       <div className="flex flex-col md:flex-row gap-2">
-                        <Button type="button" variant="outline" className="w-full md:w-auto" onClick={() => setIsMapOpen(true)}>
+                        <Button type="button" variant="outline" className="w-full md:w-auto" onClick={() => { setLocationTarget('infra'); setIsMapOpen(true); }}>
                             <MapPin className="h-4 w-4 mr-2" />
                             <span>Pin on Map</span>
                         </Button>
@@ -629,13 +712,20 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="intersection">Intersection</Label>
-                    <Input 
-                      id="intersection" 
-                      value={intersection}
-                      onChange={(e) => setIntersection(e.target.value)}
-                      placeholder="e.g., Main St & Oak Ave"
-                      className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    />
+                    <div className="flex flex-col gap-2">
+                      <Input 
+                        id="intersection" 
+                        value={intersection}
+                        onChange={(e) => setIntersection(e.target.value)}
+                        className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      />
+                      <div className="flex flex-col md:flex-row gap-2">
+                        <Button type="button" variant="outline" className="w-full md:w-auto" onClick={() => { setLocationTarget('traffic'); setIsMapOpen(true); }}>
+                          <MapPin className="h-4 w-4 mr-2" />
+                          <span>Pin on Map</span>
+                        </Button>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -706,13 +796,20 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="emergency-location">Location</Label>
-                    <Input 
-                      id="emergency-location" 
-                      value={emergencyLocation}
-                      onChange={(e) => setEmergencyLocation(e.target.value)}
-                      placeholder="Exact intersection or address"
-                      className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    />
+                    <div className="flex flex-col gap-2">
+                      <Input 
+                        id="emergency-location" 
+                        value={emergencyLocation}
+                        onChange={(e) => setEmergencyLocation(e.target.value)}
+                        className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      />
+                      <div className="flex flex-col md:flex-row gap-2">
+                        <Button type="button" variant="outline" className="w-full md:w-auto" onClick={() => { setLocationTarget('emergency'); setIsMapOpen(true); }}>
+                          <MapPin className="h-4 w-4 mr-2" />
+                          <span>Pin on Map</span>
+                        </Button>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
