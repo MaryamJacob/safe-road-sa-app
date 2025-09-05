@@ -315,12 +315,7 @@ export default function NotificationsPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
       const endpoint = `${apiUrl}/api/reports`;
 
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(endpoint, { method: 'GET' });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -339,12 +334,7 @@ export default function NotificationsPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
       const endpoint = `${apiUrl}/api/routes`;
 
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(endpoint, { method: 'GET' });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
