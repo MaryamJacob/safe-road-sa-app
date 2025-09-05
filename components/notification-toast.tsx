@@ -4,12 +4,12 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { AlertTriangle, X, MapPin, Bell } from "lucide-react"
+import { AlertTriangle, X, MapPin, Bell, CheckCircle, Info, AlertCircle, Shield } from "lucide-react"
 
 interface NotificationToastProps {
   notification: {
     id: number
-    type: "urgent" | "warning" | "info" | "safety"
+    type: "urgent" | "warning" | "info" | "safety" | "success" | "error"
     title: string
     message: string
     location?: string
@@ -43,11 +43,15 @@ export function NotificationToast({
       case "urgent":
         return <AlertTriangle className="h-4 w-4 text-destructive" />
       case "warning":
-        return <AlertTriangle className="h-4 w-4 text-yellow-600" />
+        return <AlertCircle className="h-4 w-4 text-yellow-600" />
       case "safety":
-        return <AlertTriangle className="h-4 w-4 text-secondary" />
+        return <Shield className="h-4 w-4 text-secondary" />
+      case "success":
+        return <CheckCircle className="h-4 w-4 text-green-600" />
+      case "error":
+        return <AlertTriangle className="h-4 w-4 text-destructive" />
       default:
-        return <Bell className="h-4 w-4 text-blue-600" />
+        return <Info className="h-4 w-4 text-blue-600" />
     }
   }
 
@@ -60,11 +64,15 @@ export function NotificationToast({
           </Badge>
         )
       case "warning":
-        return <Badge className="bg-yellow-100 text-yellow-800 text-xs">Warning</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 text-xs">Warning</Badge>
       case "safety":
-        return <Badge className="bg-purple-100 text-purple-800 text-xs">Safety</Badge>
+        return <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 text-xs">Safety</Badge>
+      case "success":
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 text-xs">Success</Badge>
+      case "error":
+        return <Badge variant="destructive" className="text-xs">Error</Badge>
       default:
-        return <Badge className="bg-blue-100 text-blue-800 text-xs">Info</Badge>
+        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 text-xs">Info</Badge>
     }
   }
 
@@ -76,12 +84,16 @@ export function NotificationToast({
         isVisible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
       } ${
         notification.type === "urgent"
-          ? "border-destructive"
+          ? "border-destructive bg-destructive/5"
           : notification.type === "warning"
-            ? "border-yellow-500"
+            ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10"
             : notification.type === "safety"
-              ? "border-purple-500"
-              : "border-blue-500"
+              ? "border-purple-500 bg-purple-50 dark:bg-purple-900/10"
+              : notification.type === "success"
+                ? "border-green-500 bg-green-50 dark:bg-green-900/10"
+                : notification.type === "error"
+                  ? "border-destructive bg-destructive/5"
+                  : "border-blue-500 bg-blue-50 dark:bg-blue-900/10"
       }`}
     >
       <CardContent className="p-4">

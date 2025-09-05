@@ -32,8 +32,12 @@ import {
   Clock,
   ExternalLink,
   ArrowLeft,
+  Moon,
+  Sun,
 } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
+import { useEffect } from "react";
 
 // Mock data for safety education
 const emergencyContacts = [
@@ -228,6 +232,14 @@ const hotspots = [
 ];
 
 export default function EducationPage() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted on client side
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTutorial, setSelectedTutorial] = useState<
     (typeof tutorials)[0] | null
@@ -274,15 +286,27 @@ export default function EducationPage() {
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-4">
+        <div className="flex h-16 items-center justify-between container">
           <div className="flex items-center space-x-2">
             <Shield className="h-6 w-6 text-primary" />
             <span className="font-bold text-primary">Safety Hub</span>
           </div>
+          <div className="flex items-center space-x-2">
+            {mounted && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="p-2"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
-      <div className="container max-w-6xl mx-auto py-6 px-4">
+      <div className="container max-w-6xl mx-auto py-6">
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">
             Safety Education Hub

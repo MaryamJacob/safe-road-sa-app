@@ -10,14 +10,23 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import PlacesAutocomplete from "@/components/places-autocomplete"
-import { Shield, Navigation, Filter, Search, Clock, ThumbsUp, Users, Route, Zap, X, ChevronUp, FileText, AlertTriangle } from "lucide-react"
+import { Shield, Navigation, Filter, Search, Clock, ThumbsUp, Users, Route, Zap, X, ChevronUp, FileText, AlertTriangle, Moon, Sun } from "lucide-react"
 import Link from "next/link"
 import MapComponent from "@/components/map"
 import { fetchCurrentLocation } from "@/components/current-location"
 import { useMapStore, Report } from '@/lib/store';
+import { useTheme } from "next-themes";
+import { NotificationToast } from "@/components/notification-toast";
 
 export default function MapPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted on client side
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // GET all state and actions from the global Zustand store
   const { center, zoom, reports, setMapView } = useMapStore();
@@ -35,6 +44,24 @@ export default function MapPage() {
   const [showBottomSheet, setShowBottomSheet] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [isFetchingLocation, setIsFetchingLocation] = useState(false)
+  const [activeTab, setActiveTab] = useState("reports")
+  const [notifications, setNotifications] = useState<Array<{
+    id: number;
+    type: "urgent" | "warning" | "info" | "safety" | "success" | "error";
+    title: string;
+    message: string;
+    location?: string;
+  }>>([])
+
+  // Notification helper functions
+  const addNotification = (type: "urgent" | "warning" | "info" | "safety" | "success" | "error", title: string, message: string, location?: string) => {
+    const id = Date.now() + Math.random();
+    setNotifications(prev => [...prev, { id, type, title, message, location }]);
+  };
+
+  const removeNotification = (id: number) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  };
 
   // UPDATE the location handler to use the action from the store
   const handleMyLocationClick = async () => {
@@ -44,7 +71,7 @@ export default function MapPage() {
       setMapView(coords, 15) // Use the action from the store
     } catch (error: any) {
       console.error("Error getting location:", error.message)
-      alert(`Could not get location: ${error.message}`)
+      addNotification("error", "Location Error", `Could not get your current location: ${error.message}`)
     } finally {
       setIsFetchingLocation(false)
     }
@@ -57,12 +84,12 @@ export default function MapPage() {
   // Calculate route function
   const calculateRoute = async () => {
     if (!origin || !destination) {
-      alert("Please select both an origin and a destination.");
+      addNotification("warning", "Route Planning", "Please select both an origin and a destination to calculate the route.");
       return;
     }
 
     if (!origin.geometry?.location || !destination.geometry?.location) {
-      alert("Invalid address selected. Please try again.");
+      addNotification("error", "Invalid Address", "Invalid address selected. Please try again with a valid location.");
       return;
     }
 
@@ -78,7 +105,7 @@ export default function MapPage() {
       setShowBottomSheet(false);
     } catch (error) {
       console.error("Failed to calculate route:", error);
-      alert("Could not find a route between these two locations.");
+      addNotification("error", "Route Calculation Failed", "Could not find a route between these two locations. Please try different addresses.");
     }
   };
 
@@ -134,7 +161,7 @@ export default function MapPage() {
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-4">
+        <div className="flex h-16 items-center justify-between container">
           <div className="flex items-center space-x-2">
             <Shield className="h-6 w-6 text-primary" />
             <a href="/" className="text-lg font-semibold">
@@ -146,6 +173,16 @@ export default function MapPage() {
               <Filter className="h-4 w-4 mr-2" />
               Filters
             </Button>
+            {mounted && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="p-2"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -170,14 +207,22 @@ export default function MapPage() {
               <Navigation className="h-4 w-4 mr-2" />
               {isFetchingLocation ? "Locating..." : "My Location"}
           </Button>
-          <Button size="sm" variant="outline" className="bg-background/90">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="bg-background/90"
+            onClick={() => {
+              setActiveTab("route")
+              setShowBottomSheet(true)
+            }}
+          >
             <Route className="h-4 w-4 mr-2" />
             Routes
           </Button>
         </div>
 
         {/* Legend */}
-        <div className="absolute bottom-24 left-4 bg-background/90 backdrop-blur rounded-lg p-3 border max-w-[200px]">
+        <div className="absolute bottom-24 left-4 bg-card/90 backdrop-blur rounded-lg p-3 border border-border max-w-[200px] shadow-md">
         <h4 className="font-medium mb-2 text-sm">Legend</h4>
           <div className="space-y-1 text-xs">
             <div className="flex items-center gap-2">
@@ -205,10 +250,10 @@ export default function MapPage() {
       </div>
 
       {/* Bottom Sheet for Mobile */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 ease-in-out h-[80vh] ${
+      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-2xl transition-transform duration-300 ease-in-out h-[80vh] ${
         showBottomSheet ? 'translate-y-0' : 'translate-y-full'
       }`}>
-        <div className="p-4 pb-5">
+        <div className="p-4 pb-24">
           {/* Close Button */}
           <div className="flex justify-center mb-4">
             <Button 
@@ -221,7 +266,7 @@ export default function MapPage() {
             </Button>
           </div>
           
-          <Tabs defaultValue="reports" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="reports">Reports</TabsTrigger>
               <TabsTrigger value="route">Plan Route</TabsTrigger>
@@ -366,28 +411,21 @@ export default function MapPage() {
             </TabsContent>
 
             <TabsContent value="route">
-              {/* 1. Make the tab content a full-height, vertical flex container. 
-                The calc() subtracts the approximate height of the tab buttons from the sheet's height.
-              */}
-              <div className="flex flex-col h-[calc(80vh-80px)] p-4">
-
-                {/* 2. Create a new wrapper that will grow to fill empty space */}
-                <div className="flex-grow space-y-4">
-                  <h3 className="font-medium">Plan a New Route</h3>
-                  <div className="space-y-2">
-                    <Label htmlFor="route-from">From</Label>
-                    <PlacesAutocomplete id="route-from" placeholder="Starting address" onPlaceSelect={setOrigin} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="route-to">To</Label>
-                    <PlacesAutocomplete id="route-to" placeholder="Destination address" onPlaceSelect={setDestination} />
-                  </div>
+              <div className="space-y-4 p-4">
+                <h3 className="font-medium">Plan a New Route</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="route-from">From</Label>
+                  <PlacesAutocomplete id="route-from" placeholder="Starting address" onPlaceSelect={setOrigin} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="route-to">To</Label>
+                  <PlacesAutocomplete id="route-to" placeholder="Destination address" onPlaceSelect={setDestination} />
                 </div>
                 
-                {/* 3. Because the container above it grew, this button is pushed to the bottom */}
+                {/* Button moved below the To field */}
                 <Button onClick={calculateRoute} className="w-full">
                   <Route className="h-4 w-4 mr-2" />
-                  Find Route
+                  Preview route on map
                 </Button>
               </div>
             </TabsContent>
@@ -452,6 +490,15 @@ export default function MapPage() {
           )}
         </DialogContent>
               </Dialog>
+
+      {/* Notifications */}
+      {notifications.map((notification) => (
+        <NotificationToast
+          key={notification.id}
+          notification={notification}
+          onDismiss={removeNotification}
+        />
+      ))}
       </div>
   );
 }

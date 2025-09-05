@@ -4,7 +4,7 @@
 
 import type React from "react";
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,22 +13,47 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { AlertTriangle, Camera, MapPin, Navigation, Shield, Users, Upload, CheckCircle } from "lucide-react"
+import { AlertTriangle, Camera, MapPin, Navigation, Shield, Users, Upload, CheckCircle, Moon, Sun } from "lucide-react"
 import { fetchCurrentLocation } from "@/components/current-location" // Current Location
 import LocationPickerMap from "@/components/location-picker-map"; // Location Picker Map
 import { useMapStore, Report } from '@/lib/store'; // Store and Report type
 import { useRouter } from 'next/navigation'; // Router
+import { useTheme } from "next-themes";
+import { NotificationToast } from "@/components/notification-toast";
 
 export default function ReportPage() {
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted on client side
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const { addReport } = useMapStore(); // Get the addReport action
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedImages, setSelectedImages] = useState<File[]>([])
   const [currentLocation, setCurrentLocation] = useState<string>("")
   const [isFetchingLocation, setIsFetchingLocation] = useState(false) // Current Location Fetching State
   const [isMapOpen, setIsMapOpen] = useState(false)
+  const [notifications, setNotifications] = useState<Array<{
+    id: number;
+    type: "urgent" | "warning" | "info" | "safety" | "success" | "error";
+    title: string;
+    message: string;
+    location?: string;
+  }>>([])
+
+  // Notification helper functions
+  const addNotification = (type: "urgent" | "warning" | "info" | "safety" | "success" | "error", title: string, message: string, location?: string) => {
+    const id = Date.now() + Math.random();
+    setNotifications(prev => [...prev, { id, type, title, message, location }]);
+  };
+
+  const removeNotification = (id: number) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  };
 
   // Form state variables for all tabs
   // Hazard form
@@ -69,8 +94,7 @@ export default function ReportPage() {
       setCurrentLocation(`${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`)
     } catch (error: any) {
       console.error("Error getting location:", error.message)
-      // Optional: Show an alert or a toast message to the user
-      alert(`Could not get location: ${error.message}`)
+      addNotification("error", "Location Error", `Could not get your current location: ${error.message}`)
     } finally {
       setIsFetchingLocation(false)
     }
@@ -124,10 +148,10 @@ export default function ReportPage() {
 
       const data = await res.json()
       console.log("✅ Report submitted:", data)
-      alert("Report submitted successfully!")
+      addNotification("success", "Report Submitted", "Your road hazard report has been submitted successfully and will be reviewed by authorities.")
     } catch (err) {
       console.error("Submission error:", err)
-      alert(`Failed to submit report: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      addNotification("error", "Submission Failed", `Failed to submit report: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setIsSubmitting(false)
       setSelectedImages([])
@@ -140,15 +164,15 @@ export default function ReportPage() {
     
     // Validation
     if (!currentLocation) {
-      alert("Please set a location for the report.");
+      addNotification("warning", "Location Required", "Please set a location for the report to help authorities locate the issue.");
       return;
     }
     if (!hazardType) {
-      alert("Please select a hazard type.");
+      addNotification("warning", "Hazard Type Required", "Please select a hazard type to categorize your report.");
       return;
     }
     if (!description.trim()) {
-      alert("Please provide a description.");
+      addNotification("warning", "Description Required", "Please provide a description of the road hazard to help authorities understand the issue.");
       return;
     }
 
@@ -167,8 +191,14 @@ export default function ReportPage() {
       // Call the generic submission function
       await submitReport('hazard', payload, selectedImages.length > 0);
       
-      // Only redirect if submission was successful
-      router.push('/');
+      // Reset form after successful submission
+      setHazardType("");
+      setSeverity("medium");
+      setDescription("");
+      setCurrentLocation("");
+      setSelectedImages([]);
+      
+      // Stay on the same page to show success notification
     } catch (error) {
       console.error("Hazard submission failed:", error);
       // Don't redirect on error - let the submitReport function handle the error display
@@ -179,7 +209,7 @@ export default function ReportPage() {
   const handleInfrastructureSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!infraLocation) {
-      alert("Please set a location for the request.");
+      addNotification("warning", "Location Required", "Please set a location for the infrastructure request.");
       return;
     }
 
@@ -191,14 +221,22 @@ export default function ReportPage() {
     };
 
     await submitReport('infrastructure', payload, selectedImages.length > 0);
-    router.push('/');
+    
+    // Reset form after successful submission
+    setRequestType("");
+    setPriority("medium");
+    setInfraLocation("");
+    setJustification("");
+    setSelectedImages([]);
+    
+    // Stay on the same page to show success notification
   };
 
   // Traffic Light form submission handler
   const handleTrafficLightSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!intersection) {
-      alert("Please specify the intersection.");
+      addNotification("warning", "Intersection Required", "Please specify the intersection where the traffic light issue is located.");
       return;
     }
 
@@ -210,14 +248,21 @@ export default function ReportPage() {
     };
 
     await submitReport('traffic-light', payload);
-    router.push('/');
+    
+    // Reset form after successful submission
+    setFaultType("");
+    setAffectedLanes("");
+    setIntersection("");
+    setTrafficImpact("");
+    
+    // Stay on the same page to show success notification
   };
 
   // Emergency form submission handler
   const handleEmergencySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!emergencyLocation) {
-      alert("Please set a location for the emergency request.");
+      addNotification("warning", "Location Required", "Please set a location for the emergency request to help authorities respond quickly.");
       return;
     }
 
@@ -229,22 +274,41 @@ export default function ReportPage() {
     };
 
     await submitReport('emergency', payload);
-    router.push('/');
+    
+    // Reset form after successful submission
+    setEmergencyType("");
+    setEmergencyLocation("");
+    setSituation("");
+    setContact("");
+    
+    // Stay on the same page to show success notification
   };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-4">
+        <div className="flex h-16 items-center justify-between container">
           <div className="flex items-center space-x-2">
             <Shield className="h-6 w-6 text-primary" />
             <span className="font-bold text-primary">Report Issue</span>
           </div>
+          <div className="flex items-center space-x-2">
+            {mounted && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="p-2"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
-      <div className="container max-w-4xl mx-auto py-6 px-4">
+      <div className="container max-w-4xl mx-auto py-8">
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">
             Report a Safety Issue
@@ -284,13 +348,13 @@ export default function ReportPage() {
                   that pose a safety risk.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleHazardSubmit} className="space-y-4 md:space-y-6">
+              <CardContent className="p-6">
+                <form onSubmit={handleHazardSubmit} className="space-y-6">
                   <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="hazard-type">Hazard Type</Label>
                       <Select value={hazardType} onValueChange={setHazardType}>
-                        <SelectTrigger>
+                        <SelectTrigger className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                           <SelectValue placeholder="Select hazard type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -305,67 +369,40 @@ export default function ReportPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Severity Level</Label>
-                      <RadioGroup value={severity} onValueChange={setSeverity} className="flex flex-col md:flex-row gap-3 md:gap-4">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="minor" id="minor" />
-                          <Label
-                            htmlFor="minor"
-                            className="flex items-center gap-1"
-                          >
-                            <Badge
-                              variant="secondary"
-                              className="bg-green-100 text-green-800"
-                            >
-                              Minor
-                            </Badge>
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="medium" id="medium" />
-                          <Label
-                            htmlFor="medium"
-                            className="flex items-center gap-1"
-                          >
-                            <Badge
-                              variant="secondary"
-                              className="bg-yellow-100 text-yellow-800"
-                            >
-                              Medium
-                            </Badge>
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="urgent" id="urgent" />
-                          <Label
-                            htmlFor="urgent"
-                            className="flex items-center gap-1"
-                          >
-                            <Badge variant="destructive">Urgent</Badge>
-                          </Label>
-                        </div>
-                      </RadioGroup>
+                      <Label htmlFor="severity">Severity Level</Label>
+                      <Select value={severity} onValueChange={setSeverity}>
+                        <SelectTrigger className="w-full border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                          <SelectValue placeholder="Select severity level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="minor">Minor</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="urgent">Urgent</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="location">Location</Label>
-                    <div className="flex flex-col md:flex-row gap-2">
+                    <div className="flex flex-col gap-2">
                       <Input
                         id="location"
                         placeholder="Enter street address or intersection"
                         value={currentLocation}
                         onChange={(e) => setCurrentLocation(e.target.value)}
-                        className="flex-1"
+                        className="w-full border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
-                      <Button type="button" variant="outline" className="md:w-auto" onClick={() => setIsMapOpen(true)}>
+                      <div className="flex flex-col md:flex-row gap-2">
+                        <Button type="button" variant="outline" className="w-full md:w-auto" onClick={() => setIsMapOpen(true)}>
+                            <MapPin className="h-4 w-4 mr-2" />
+                            <span>Pin on Map</span>
+                        </Button>
+                        <Button type="button" variant="outline" onClick={getCurrentLocation} className="w-full md:w-auto" disabled={isFetchingLocation}>
                           <MapPin className="h-4 w-4 mr-2" />
-                          <span>Pin on Map</span>
-                      </Button>
-                      <Button type="button" variant="outline" onClick={getCurrentLocation} className="md:w-auto" disabled={isFetchingLocation}>
-                        <MapPin className="h-4 w-4 mr-2" />
-                        <span className="md:hidden">{isFetchingLocation ? "Fetching..." : "Get Location"}</span>
-                      </Button>
+                          <span>{isFetchingLocation ? "Fetching..." : "Get Location"}</span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
@@ -376,7 +413,7 @@ export default function ReportPage() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Describe the hazard in detail..."
-                      className="min-h-[100px]"
+                      className="min-h-[100px] border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
 
@@ -434,13 +471,13 @@ export default function ReportPage() {
                   infrastructure changes.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleInfrastructureSubmit} className="space-y-4 md:space-y-6">
+              <CardContent className="p-6">
+                <form onSubmit={handleInfrastructureSubmit} className="space-y-6">
                   <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="request-type">Request Type</Label>
                       <Select value={requestType} onValueChange={setRequestType}>
-                        <SelectTrigger>
+                        <SelectTrigger className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                           <SelectValue placeholder="Select request type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -458,7 +495,7 @@ export default function ReportPage() {
                     <div className="space-y-2">
                       <Label htmlFor="priority">Priority</Label>
                       <Select value={priority} onValueChange={setPriority}>
-                        <SelectTrigger>
+                        <SelectTrigger className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                           <SelectValue placeholder="Select priority" />
                         </SelectTrigger>
                         <SelectContent>
@@ -473,22 +510,24 @@ export default function ReportPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="infra-location">Location</Label>
-                    <div className="flex flex-col md:flex-row gap-3">
+                    <div className="flex flex-col gap-2">
                       <Input
                         id="infra-location"
                         value={infraLocation}
                         onChange={(e) => setInfraLocation(e.target.value)}
                         placeholder="Enter intersection or street address"
-                        className="flex-1"
+                        className="w-full border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       />
-                      <Button type="button" variant="outline" className="md:w-auto" onClick={() => setIsMapOpen(true)}>
+                      <div className="flex flex-col md:flex-row gap-2">
+                        <Button type="button" variant="outline" className="w-full md:w-auto" onClick={() => setIsMapOpen(true)}>
+                            <MapPin className="h-4 w-4 mr-2" />
+                            <span>Pin on Map</span>
+                        </Button>
+                        <Button type="button" variant="outline" onClick={getCurrentLocation} className="w-full md:w-auto">
                           <MapPin className="h-4 w-4 mr-2" />
-                          <span>Pin on Map</span>
-                      </Button>
-                      <Button type="button" variant="outline" onClick={getCurrentLocation} className="md:w-auto">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        <span className="md:hidden">Get Location</span>
-                      </Button>
+                          <span>Get Location</span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
@@ -499,7 +538,7 @@ export default function ReportPage() {
                       value={justification}
                       onChange={(e) => setJustification(e.target.value)}
                       placeholder="Explain why this infrastructure change is needed..."
-                      className="min-h-[120px]"
+                      className="min-h-[120px] border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
 
@@ -551,13 +590,13 @@ export default function ReportPage() {
                   completely out of order.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleTrafficLightSubmit} className="space-y-4 md:space-y-6">
+              <CardContent className="p-6">
+                <form onSubmit={handleTrafficLightSubmit} className="space-y-6">
                   <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="fault-type">Fault Type</Label>
                       <Select value={faultType} onValueChange={setFaultType}>
-                        <SelectTrigger>
+                        <SelectTrigger className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                           <SelectValue placeholder="Select fault type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -574,7 +613,7 @@ export default function ReportPage() {
                     <div className="space-y-2">
                       <Label htmlFor="affected-lanes">Affected Lanes</Label>
                       <Select value={affectedLanes} onValueChange={setAffectedLanes}>
-                        <SelectTrigger>
+                        <SelectTrigger className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                           <SelectValue placeholder="Select affected lanes" />
                         </SelectTrigger>
                         <SelectContent>
@@ -594,7 +633,8 @@ export default function ReportPage() {
                       id="intersection" 
                       value={intersection}
                       onChange={(e) => setIntersection(e.target.value)}
-                      placeholder="e.g., Main St & Oak Ave" 
+                      placeholder="e.g., Main St & Oak Ave"
+                      className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
 
@@ -605,7 +645,7 @@ export default function ReportPage() {
                       value={trafficImpact}
                       onChange={(e) => setTrafficImpact(e.target.value)}
                       placeholder="Describe how this is affecting traffic flow..."
-                      className="min-h-[80px]"
+                      className="min-h-[80px] border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
 
@@ -647,14 +687,14 @@ export default function ReportPage() {
                   lights or emergency situations.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleEmergencySubmit} className="space-y-4 md:space-y-6">
+              <CardContent className="p-6">
+                <form onSubmit={handleEmergencySubmit} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="emergency-type">Request Type</Label>
-                    <Select value={emergencyType} onValueChange={setEmergencyType}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select request type" />
-                      </SelectTrigger>
+                                          <Select value={emergencyType} onValueChange={setEmergencyType}>
+                        <SelectTrigger className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                          <SelectValue placeholder="Select request type" />
+                        </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="traffic director">Traffic Director</SelectItem>
                         <SelectItem value="emergency response">Emergency Response</SelectItem>
@@ -670,7 +710,8 @@ export default function ReportPage() {
                       id="emergency-location" 
                       value={emergencyLocation}
                       onChange={(e) => setEmergencyLocation(e.target.value)}
-                      placeholder="Exact intersection or address" 
+                      placeholder="Exact intersection or address"
+                      className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
 
@@ -681,7 +722,7 @@ export default function ReportPage() {
                       value={situation}
                       onChange={(e) => setSituation(e.target.value)}
                       placeholder="Describe the current situation and why assistance is needed..."
-                      className="min-h-[100px]"
+                      className="min-h-[100px] border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
 
@@ -692,7 +733,8 @@ export default function ReportPage() {
                       type="tel" 
                       value={contact}
                       onChange={(e) => setContact(e.target.value)}
-                      placeholder="+27 XX XXX XXXX" 
+                      placeholder="+27 XX XXX XXXX"
+                      className="border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
 
@@ -736,6 +778,15 @@ export default function ReportPage() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Notifications */}
+      {notifications.map((notification) => (
+        <NotificationToast
+          key={notification.id}
+          notification={notification}
+          onDismiss={removeNotification}
+        />
+      ))}
 
       </div>
     </div>

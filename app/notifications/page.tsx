@@ -41,12 +41,16 @@ import {
   X,
   Smartphone,
   Mail,
+  Moon,
+  Sun,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import Link from "next/link"
 import PlacesAutocomplete from "@/components/places-autocomplete";
 import MapComponent from '@/components/map';
 import { supabase } from "@/lib/supabaseClient";
+import { useTheme } from "next-themes";
+import { NotificationToast } from "@/components/notification-toast";
 
 // Mock data for notifications
 const mockNotifications = [
@@ -111,12 +115,38 @@ const mockRoutes: RouteData[] = [
 const libraries: ("places" | "directions")[] = ['places', 'directions'];
 
 export default function NotificationsPage() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted on client side
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [notifications, setNotifications] = useState(mockNotifications);
   const [routes, setRoutes] = useState(mockRoutes);
   const [routeName, setRouteName] = useState("");
   const [origin, setOrigin] = useState<google.maps.places.PlaceResult | null>(null);
   const [destination, setDestination] = useState<google.maps.places.PlaceResult | null>(null);
   const [directionsResponse, setDirectionsResponse] = useState<google.maps.DirectionsResult | null>(null);
+  const [toastNotifications, setToastNotifications] = useState<Array<{
+    id: number;
+    type: "urgent" | "warning" | "info" | "safety" | "success" | "error";
+    title: string;
+    message: string;
+    location?: string;
+  }>>([]);
+  
+  // Notification helper functions
+  const addToastNotification = (type: "urgent" | "warning" | "info" | "safety" | "success" | "error", title: string, message: string, location?: string) => {
+    const id = Date.now() + Math.random();
+    setToastNotifications(prev => [...prev, { id, type, title, message, location }]);
+  };
+
+  const removeToastNotification = (id: number) => {
+    setToastNotifications(prev => prev.filter(notif => notif.id !== id));
+  };
+
   const [isAdding, setIsAdding] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [notificationSettings, setNotificationSettings] = useState({
@@ -176,7 +206,7 @@ export default function NotificationsPage() {
 
   const addRoute = async () => {
     if (!routeName || !origin || !destination || !directionsResponse) {
-      alert("Please preview a valid route before adding.");
+      addToastNotification("warning", "Route Required", "Please preview a valid route before adding it to your saved routes.");
       return;
     }
     setIsAdding(true);
@@ -220,15 +250,16 @@ export default function NotificationsPage() {
       setDestination(null);
       setDirectionsResponse(null);
       setDialogOpen(false);
+      addToastNotification("success", "Route Added", `Route "${routeName}" has been successfully added to your saved routes.`);
 
     } catch (error) {
       console.error("Failed to save route:", error);
       
       // Check if the error is an actual Error object
       if (error instanceof Error) {
-        alert(`Failed to save your route: ${error.message}`);
+        addToastNotification("error", "Route Save Failed", `Failed to save your route: ${error.message}`);
       } else {
-        alert("An unknown error occurred while saving your route.");
+        addToastNotification("error", "Route Save Failed", "An unknown error occurred while saving your route.");
       }
   
       // Roll back the optimistic update if the API call fails
@@ -288,24 +319,36 @@ export default function NotificationsPage() {
       <div className="min-h-screen bg-background">
         {/* Mobile Header */}
         <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-16 items-center justify-between px-4">
+          <div className="flex h-16 items-center justify-between container">
             <div className="flex items-center space-x-2">
               <Shield className="h-6 w-6 text-primary" />
 
               <span className="font-bold text-primary">Profile</span>
             </div>
-            <div className="relative">
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                  {unreadCount}
-                </Badge>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </div>
+              {mounted && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="p-2"
+                >
+                  {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </Button>
               )}
             </div>
           </div>
         </header>
 
-        <div className="container max-w-4xl mx-auto py-6 px-4">
+        <div className="container max-w-4xl mx-auto py-6">
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold mb-2">
               Notifications & Alerts
@@ -895,6 +938,15 @@ export default function NotificationsPage() {
           </Tabs>
         </div>
       </div>
+
+      {/* Toast Notifications */}
+      {toastNotifications.map((notification) => (
+        <NotificationToast
+          key={notification.id}
+          notification={notification}
+          onDismiss={removeToastNotification}
+        />
+      ))}
     </>
   ); 
 }

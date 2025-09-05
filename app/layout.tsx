@@ -47,7 +47,7 @@ export default function RootLayout({
         <title>SafeRoad SA</title>
         <meta name="description" content="Making South African Roads Safer Together." />
       </head>
-      <body className={`font-sans ${playfairDisplay.variable} ${sourceSans.variable} antialiased`}>
+      <body className={`${sourceSans.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <GoogleMapsProvider>
             <AppLayout>
