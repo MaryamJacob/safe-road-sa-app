@@ -417,6 +417,32 @@ export default function EducationPage() {
                                 </li>
                               ))}
                             </ol>
+                            {tutorial.title === "How to Change a Tire" && (
+                              <div className="mt-4">
+                                <iframe
+                                  width="450"
+                                  height="315"
+                                  src="https://www.youtube.com/embed/QjZ5ohr7sGA"
+                                  title="YouTube video player"
+                                  frameBorder="0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                ></iframe>
+                              </div>
+                            )}
+                            {tutorial.title === "Jump Starting Your Car" && (
+                              <div className="mt-4">
+                                <iframe
+                                  width="450"
+                                  height="315"
+                                  src="https://www.youtube.com/embed/VdnkRQF5Cps"
+                                  title="YouTube video player"
+                                  frameBorder="0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                ></iframe>
+                              </div>
+                            )}
                           </div>
                           {tutorial.category === "Personal Safety" && (
                             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
