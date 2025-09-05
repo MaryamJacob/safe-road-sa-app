@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from '@react-google-maps/api';
 import type { Report } from '@/lib/store'; // Gives Us Report Type
 
 // Define colors for each report type
@@ -21,9 +21,10 @@ interface MapComponentProps {
   };
   zoom: number;
   reports: Report[]; // Accept an array of reports
+  directionsResponse: google.maps.DirectionsResult | null;
 }
 
-function MapComponent({ center, zoom, reports }: MapComponentProps) {
+function MapComponent({ center, zoom, reports, directionsResponse }: MapComponentProps) {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!
@@ -57,6 +58,10 @@ function MapComponent({ center, zoom, reports }: MapComponentProps) {
             }}
           />
         ))}
+        
+        {directionsResponse && (
+          <DirectionsRenderer directions={directionsResponse} />
+        )}
       </GoogleMap>
   ) : <div>Loading Map...</div>
 }

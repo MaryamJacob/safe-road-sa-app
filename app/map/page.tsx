@@ -7,17 +7,29 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Shield, Navigation, Filter, Search, Clock, ThumbsUp, Users, Route, Zap, X, ChevronUp, FileText } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Label } from "@/components/ui/label"
+import PlacesAutocomplete from "@/components/places-autocomplete"
+import { Shield, Navigation, Filter, Search, Clock, ThumbsUp, Users, Route, Zap, X, ChevronUp, FileText, AlertTriangle, Moon, Sun } from "lucide-react"
 import Link from "next/link"
 import MapComponent from "@/components/map"
 import { fetchCurrentLocation } from "@/components/current-location"
 import { useMapStore, Report } from '@/lib/store';
+import { useTheme } from "next-themes";
+import { NotificationToast } from "@/components/notification-toast";
 
 export default function MapPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted on client side
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // GET all state and actions from the global Zustand store
-  const { center, zoom, reports, setMapView } = useMapStore();
+  const { center, zoom, reports, setMapView, setReports } = useMapStore();
 
   // This local state is still needed to hold the *filtered* version of the reports for the list
   const [filteredReports, setFilteredReports] = useState(reports);
@@ -32,6 +44,24 @@ export default function MapPage() {
   const [showBottomSheet, setShowBottomSheet] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [isFetchingLocation, setIsFetchingLocation] = useState(false)
+  const [activeTab, setActiveTab] = useState("reports")
+  const [notifications, setNotifications] = useState<Array<{
+    id: number;
+    type: "urgent" | "warning" | "info" | "safety" | "success" | "error";
+    title: string;
+    message: string;
+    location?: string;
+  }>>([])
+
+  // Notification helper functions
+  const addNotification = (type: "urgent" | "warning" | "info" | "safety" | "success" | "error", title: string, message: string, location?: string) => {
+    const id = Date.now() + Math.random();
+    setNotifications(prev => [...prev, { id, type, title, message, location }]);
+  };
+
+  const removeNotification = (id: number) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  };
 
   // UPDATE the location handler to use the action from the store
   const handleMyLocationClick = async () => {
@@ -41,11 +71,123 @@ export default function MapPage() {
       setMapView(coords, 15) // Use the action from the store
     } catch (error: any) {
       console.error("Error getting location:", error.message)
-      alert(`Could not get location: ${error.message}`)
+      addNotification("error", "Location Error", `Could not get your current location: ${error.message}`)
     } finally {
       setIsFetchingLocation(false)
     }
   }
+
+  const [origin, setOrigin] = useState<google.maps.places.PlaceResult | null>(null);
+  const [destination, setDestination] = useState<google.maps.places.PlaceResult | null>(null);
+  const [directionsResponse, setDirectionsResponse] = useState<google.maps.DirectionsResult | null>(null);
+
+  // Fetch reports from backend and populate the global store
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+        const endpoint = `${apiUrl}/api/reports`;
+        const res = await fetch(endpoint, { headers: { 'Content-Type': 'application/json' } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        const normalized = convertBackendReportsToStoreReports(data);
+        if (normalized.length) setReports(normalized);
+      } catch (err) {
+        console.warn('Failed to fetch backend reports; using existing store reports');
+      }
+    };
+    fetchReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const parseLatLng = (value: string): { lat: number; lng: number } | null => {
+    const match = value?.trim().match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*$/);
+    if (!match) return null;
+    const lat = parseFloat(match[1]);
+    const lng = parseFloat(match[2]);
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+    return { lat, lng };
+  };
+
+  const mapHazardToType = (hazardType: string): Report['type'] => {
+    const h = (hazardType || '').toLowerCase();
+    if (h.includes('pothole')) return 'pothole';
+    if (h.includes('obstruction')) return 'obstruction';
+    if (h.includes('debris')) return 'debris';
+    if (h.includes('accident')) return 'accident';
+    return 'obstruction';
+  };
+
+  const convertBackendReportsToStoreReports = (backend: any): Report[] => {
+    const out: Report[] = [];
+    // Road hazards
+    if (Array.isArray(backend?.road_hazards)) {
+      for (const item of backend.road_hazards) {
+        const coords = typeof item.location === 'string' ? parseLatLng(item.location) : null;
+        if (!coords) continue;
+        out.push({
+          id: out.length + 1,
+          type: mapHazardToType(item.hazard_type || ''),
+          severity: (item.severity || 'medium') as Report['severity'],
+          location: coords,
+          address: item.location,
+          description: item.description || item.hazard_type || 'Hazard',
+          timestamp: new Date(item.created_at || Date.now()).toLocaleTimeString(),
+          upvotes: 0,
+          status: 'reported',
+          reporter: 'Backend',
+        });
+      }
+    }
+    // Traffic lights
+    if (Array.isArray(backend?.traffic_light_reports)) {
+      for (const item of backend.traffic_light_reports) {
+        const coords = typeof item.intersection === 'string' ? parseLatLng(item.intersection) : null;
+        if (!coords) continue;
+        out.push({
+          id: out.length + 1,
+          type: 'traffic-light',
+          severity: 'urgent',
+          location: coords,
+          address: item.intersection,
+          description: `${item.fault_type || 'Traffic light issue'}${item.traffic_impact ? ` - ${item.traffic_impact}` : ''}`,
+          timestamp: new Date(item.created_at || Date.now()).toLocaleTimeString(),
+          upvotes: 0,
+          status: 'reported',
+          reporter: 'Backend',
+        });
+      }
+    }
+    return out;
+  };
+
+  // Calculate route function
+  const calculateRoute = async () => {
+    if (!origin || !destination) {
+      addNotification("warning", "Route Planning", "Please select both an origin and a destination to calculate the route.");
+      return;
+    }
+
+    if (!origin.geometry?.location || !destination.geometry?.location) {
+      addNotification("error", "Invalid Address", "Invalid address selected. Please try again with a valid location.");
+      return;
+    }
+
+    const directionsService = new google.maps.DirectionsService();
+    try {
+      const results = await directionsService.route({
+        origin: origin.geometry.location,
+        destination: destination.geometry.location,
+        travelMode: google.maps.TravelMode.DRIVING,
+      });
+      setDirectionsResponse(results);
+      // Optional: Close the bottom sheet after calculating
+      setShowBottomSheet(false);
+    } catch (error) {
+      console.error("Failed to calculate route:", error);
+      addNotification("error", "Route Calculation Failed", "Could not find a route between these two locations. Please try different addresses.");
+    }
+  };
 
   // UPDATE useEffect to use the global 'reports' as the source
   useEffect(() => {
@@ -99,7 +241,7 @@ export default function MapPage() {
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-4">
+        <div className="flex h-16 items-center justify-between container">
           <div className="flex items-center space-x-2">
             <Shield className="h-6 w-6 text-primary" />
             <a href="/" className="text-lg font-semibold">
@@ -107,13 +249,20 @@ export default function MapPage() {
             </a>
           </div>
           <div className="flex items-center space-x-2">
-            <Button size="sm" variant="outline" onClick={() => setShowBottomSheet(!showBottomSheet)} className="md:hidden">
-              {showBottomSheet ? <X className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-            </Button>
             <Button size="sm" variant="outline" onClick={() => setShowFilters(!showFilters)} className="hidden md:block">
               <Filter className="h-4 w-4 mr-2" />
               Filters
             </Button>
+            {mounted && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="p-2"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -122,16 +271,14 @@ export default function MapPage() {
       <div className="relative h-[calc(100vh-4rem)]">
         <div className="absolute inset-0">
           {/* PASS the global state and reports down to the MapComponent */}
-          <MapComponent center={center} zoom={zoom} reports={filteredReports} />
+          <MapComponent center={center} zoom={zoom} reports={filteredReports} directionsResponse={directionsResponse} />
         </div>
 
-        {/* Floating Action Button for Report */}
+        {/* Floating Action Button for Bottom Sheet */}
         <div className="absolute bottom-24 right-4">
-          <Link href="/report">
-            <Button size="lg" className="rounded-full w-14 h-14 shadow-lg">
-              <FileText className="h-6 w-6" />
-            </Button>
-          </Link>
+          <Button size="lg" className="rounded-full w-14 h-14 shadow-lg" onClick={() => setShowBottomSheet(true)}>
+            <AlertTriangle className="h-6 w-6" />
+          </Button>
         </div>
 
         {/* Map Controls */}
@@ -140,14 +287,22 @@ export default function MapPage() {
               <Navigation className="h-4 w-4 mr-2" />
               {isFetchingLocation ? "Locating..." : "My Location"}
           </Button>
-          <Button size="sm" variant="outline" className="bg-background/90">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="bg-background/90"
+            onClick={() => {
+              setActiveTab("route")
+              setShowBottomSheet(true)
+            }}
+          >
             <Route className="h-4 w-4 mr-2" />
             Routes
           </Button>
         </div>
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur rounded-lg p-3 border max-w-[200px]">
+        <div className="absolute bottom-24 left-4 bg-card/90 backdrop-blur rounded-lg p-3 border border-border max-w-[200px] shadow-md">
         <h4 className="font-medium mb-2 text-sm">Legend</h4>
           <div className="space-y-1 text-xs">
             <div className="flex items-center gap-2">
@@ -175,157 +330,186 @@ export default function MapPage() {
       </div>
 
       {/* Bottom Sheet for Mobile */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl transition-transform duration-300 ease-in-out ${
+      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-2xl transition-transform duration-300 ease-in-out h-[80vh] ${
         showBottomSheet ? 'translate-y-0' : 'translate-y-full'
       }`}>
-         <div className="p-4">
-          {/* Handle */}
+        <div className="p-4 pb-24">
+          {/* Close Button */}
           <div className="flex justify-center mb-4">
-            <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
-          </div>
-          {/*  Search, Filters, Stats, and Reports List  */}
-          <div className="p-4">
-            {/* Handle */}
-            <div className="flex justify-center mb-4">
-              <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
-            </div>
-
-            {/* Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by location..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Filter Toggle */}
-            <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="w-full mb-4">
-              <Filter className="h-4 w-4 mr-2" />
-              Filters
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowBottomSheet(false)}
+              className="p-2"
+            >
+              <ChevronUp className="h-5 w-5 rotate-180" />
             </Button>
+          </div>
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="reports">Reports</TabsTrigger>
+              <TabsTrigger value="route">Plan Route</TabsTrigger>
+            </TabsList>
 
-            {/* Filters */}
-            {showFilters && (
-              <div className="space-y-4 mb-4 p-4 bg-muted/50 rounded-lg">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Report Type</label>
-                  <Select value={filters.type} onValueChange={(value) => setFilters({ ...filters, type: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="pothole">Potholes</SelectItem>
-                      <SelectItem value="traffic-light">Traffic Lights</SelectItem>
-                      <SelectItem value="obstruction">Obstructions</SelectItem>
-                      <SelectItem value="debris">Debris</SelectItem>
-                      <SelectItem value="accident">Accidents</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Severity</label>
-                  <Select
-                    value={filters.severity}
-                    onValueChange={(value) => setFilters({ ...filters, severity: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Severities</SelectItem>
-                      <SelectItem value="minor">Minor</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Status</label>
-                  <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="reported">Reported</SelectItem>
-                      <SelectItem value="verified">Verified</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="emergency">Emergency</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <TabsContent value="reports" className="max-h-[50vh] overflow-y-auto">
+              {/* Search */}
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by location..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            )}
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              <Card className="p-3">
-                <div className="text-2xl font-bold text-destructive">{filteredReports.length}</div>
-                <div className="text-xs text-muted-foreground">Active Reports</div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-2xl font-bold text-secondary">
-                  {filteredReports.filter((r) => r.severity === "urgent").length}
+              {/* Filter Toggle */}
+              <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="w-full mb-4">
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+
+              {/* Filters */}
+              {showFilters && (
+                <div className="space-y-4 mb-4 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Report Type</label>
+                    <Select value={filters.type} onValueChange={(value) => setFilters({ ...filters, type: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="pothole">Potholes</SelectItem>
+                        <SelectItem value="traffic-light">Traffic Lights</SelectItem>
+                        <SelectItem value="obstruction">Obstructions</SelectItem>
+                        <SelectItem value="debris">Debris</SelectItem>
+                        <SelectItem value="accident">Accidents</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Severity</label>
+                    <Select
+                      value={filters.severity}
+                      onValueChange={(value) => setFilters({ ...filters, severity: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Severities</SelectItem>
+                        <SelectItem value="minor">Minor</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="urgent">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Status</label>
+                    <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="reported">Reported</SelectItem>
+                        <SelectItem value="verified">Verified</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="emergency">Emergency</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">Urgent Issues</div>
-              </Card>
-            </div>
+              )}
 
-            {/* Reports List */}
-            <div className="mb-4">
-              <h3 className="font-medium mb-3">Recent Reports ({filteredReports.length})</h3>
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {filteredReports.map((report) => (
-                  <Card
-                    key={report.id}
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => setSelectedReport(report)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{getReportIcon(report.type)}</span>
-                          <div>
-                            <div className="font-medium text-sm">{report.address}</div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {report.timestamp}
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <Card className="p-3">
+                  <div className="text-2xl font-bold text-destructive">{filteredReports.length}</div>
+                  <div className="text-xs text-muted-foreground">Active Reports</div>
+                </Card>
+                <Card className="p-3">
+                  <div className="text-2xl font-bold text-secondary">
+                    {filteredReports.filter((r) => r.severity === "urgent").length}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Urgent Issues</div>
+                </Card>
+              </div>
+
+              {/* Reports List */}
+              <div className="mb-4">
+                <h3 className="font-medium mb-3">Recent Reports ({filteredReports.length})</h3>
+                <div className="space-y-3">
+                  {filteredReports.map((report) => (
+                    <Card
+                      key={report.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => setSelectedReport(report)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{getReportIcon(report.type)}</span>
+                            <div>
+                              <div className="font-medium text-sm">{report.address}</div>
+                              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {report.timestamp}
+                              </div>
                             </div>
                           </div>
+                          {getStatusBadge(report.status)}
                         </div>
-                        {getStatusBadge(report.status)}
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2">{report.description}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <ThumbsUp className="h-3 w-3" />
-                          {report.upvotes}
+                        <p className="text-xs text-muted-foreground mb-2">{report.description}</p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <ThumbsUp className="h-3 w-3" />
+                            {report.upvotes}
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${
+                              report.severity === "urgent"
+                                ? "border-red-500 text-red-700"
+                                : report.severity === "medium"
+                                  ? "border-yellow-500 text-yellow-700"
+                                  : "border-green-500 text-green-700"
+                            }`}
+                          >
+                            {report.severity}
+                          </Badge>
                         </div>
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${
-                            report.severity === "urgent"
-                              ? "border-red-500 text-red-700"
-                              : report.severity === "medium"
-                                ? "border-yellow-500 text-yellow-700"
-                                : "border-green-500 text-green-700"
-                          }`}
-                        >
-                          {report.severity}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="route">
+              <div className="space-y-4 p-4">
+                <h3 className="font-medium">Plan a New Route</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="route-from">From</Label>
+                  <PlacesAutocomplete id="route-from" placeholder="Starting address" onPlaceSelect={setOrigin} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="route-to">To</Label>
+                  <PlacesAutocomplete id="route-to" placeholder="Destination address" onPlaceSelect={setDestination} />
+                </div>
+                
+                {/* Button moved below the To field */}
+                <Button onClick={calculateRoute} className="w-full">
+                  <Route className="h-4 w-4 mr-2" />
+                  Preview route on map
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
@@ -385,7 +569,16 @@ export default function MapPage() {
             </>
           )}
         </DialogContent>
-      </Dialog>
-    </div>
+              </Dialog>
+
+      {/* Notifications */}
+      {notifications.map((notification) => (
+        <NotificationToast
+          key={notification.id}
+          notification={notification}
+          onDismiss={removeNotification}
+        />
+      ))}
+      </div>
   );
 }

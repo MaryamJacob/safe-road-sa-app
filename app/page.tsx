@@ -1,26 +1,50 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertTriangle, MapPin, Shield, Users, Phone, Navigation } from "lucide-react"
+import { AlertTriangle, MapPin, Shield, Users, Phone, Navigation, Moon, Sun } from "lucide-react"
 import Link from "next/link"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
 export default function HomePage() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted on client side
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   return (
-    <div className="bg-white dark:bg-zinc-900 text-black dark:text-white min-h-screen">
+    <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-4">
+        <div className="flex h-16 items-center justify-between container">
           <div className="flex items-center space-x-2">
             <Shield className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold text-primary">SafeRoad SA</span>
           </div>
-          <Button asChild size="sm">
-            <Link href="/auth">Sign In</Link>
-          </Button>
+          <div className="flex items-center space-x-2">
+            {mounted && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="p-2"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+            )}
+            <Button asChild size="sm">
+              <Link href="/auth">Sign In</Link>
+            </Button>
+          </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-12 md:py-20 px-4">
+      <section className="py-12 md:py-20">
         <div className="container max-w-4xl mx-auto text-center">
           <h1 className="text-3xl md:text-6xl font-bold text-balance mb-6">
             Making South African Roads
@@ -48,7 +72,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-12 md:py-16 px-4 bg-muted/30">
+      <section className="py-12 md:py-16 bg-muted/30">
         <div className="container max-w-6xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">How SafeRoad SA Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -156,7 +180,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-12 md:py-20 px-4">
+      <section className="py-12 md:py-20">
         <div className="container max-w-4xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl font-bold mb-6">Join the SafeRoad SA Community</h2>
           <p className="text-base md:text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
@@ -170,7 +194,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-8 md:py-12 px-4">
+      <footer className="border-t border-border py-8 md:py-12">
         <div className="container max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
             <div>
@@ -186,17 +210,17 @@ export default function HomePage() {
               <h3 className="font-semibold mb-4 text-sm md:text-base">Features</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <Link href="/report" className="hover:text-primary">
+                  <Link href="/report" className="hover:bg-muted/50 hover:text-foreground px-2 py-1 rounded transition-colors">
                     Report Issues
                   </Link>
                 </li>
                 <li>
-                  <Link href="/map" className="hover:text-primary">
+                  <Link href="/map" className="hover:bg-muted/50 hover:text-foreground px-2 py-1 rounded transition-colors">
                     Safety Map
                   </Link>
                 </li>
                 <li>
-                  <Link href="/education" className="hover:text-primary">
+                  <Link href="/education" className="hover:bg-muted/50 hover:text-foreground px-2 py-1 rounded transition-colors">
                     Safety Hub
                   </Link>
                 </li>
@@ -206,17 +230,17 @@ export default function HomePage() {
               <h3 className="font-semibold mb-4 text-sm md:text-base">Support</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <Link href="/help" className="hover:text-primary">
+                  <Link href="/help" className="hover:bg-muted/50 hover:text-foreground px-2 py-1 rounded transition-colors">
                     Help Center
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="hover:text-primary">
+                  <Link href="/contact" className="hover:bg-muted/50 hover:text-foreground px-2 py-1 rounded transition-colors">
                     Contact Us
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacy" className="hover:text-primary">
+                  <Link href="/privacy" className="hover:bg-muted/50 hover:text-foreground px-2 py-1 rounded transition-colors">
                     Privacy Policy
                   </Link>
                 </li>

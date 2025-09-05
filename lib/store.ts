@@ -22,6 +22,7 @@ interface MapState {
   reports: Report[];
   setMapView: (center: { lat: number; lng: number }, zoom: number) => void;
   addReport: (report: Omit<Report, 'id' | 'timestamp' | 'reporter'>) => void;
+  setReports: (reports: Report[]) => void;
 }
 
 // Mock Data
@@ -37,6 +38,9 @@ export const useMapStore = create<MapState>((set) => ({
   reports: mockReports, // Initialize with mock data
   
   setMapView: (center, zoom) => set({ center, zoom }),
+  
+  // Replace entire reports list (e.g., from backend)
+  setReports: (reports) => set({ reports }),
   
   // Action to add a new report
   addReport: (newReportData) => set((state) => ({
