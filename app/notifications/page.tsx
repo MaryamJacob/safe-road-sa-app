@@ -43,6 +43,7 @@ import {
   Mail,
   Moon,
   Sun,
+  RefreshCw,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import Link from "next/link"
@@ -122,6 +123,31 @@ export default function NotificationsPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Load backend data when component mounts
+  useEffect(() => {
+    if (mounted) {
+      // Load reports data
+      fetchReportsFromBackend().then((reportsData) => {
+        if (reportsData) {
+          const backendNotifications = convertReportsToNotifications(reportsData);
+          setNotifications(prev => [...backendNotifications, ...prev]); // Add backend data on top of mock data
+        }
+      }).catch((error) => {
+        console.log('Backend not available for reports - using mock data only');
+      });
+
+      // Load routes data
+      fetchRoutesFromBackend().then((routesData) => {
+        if (routesData) {
+          const backendRoutes = convertRoutesToExpectedFormat(routesData);
+          setRoutes(prev => [...backendRoutes, ...prev]); // Add backend data on top of mock data
+        }
+      }).catch((error) => {
+        console.log('Backend not available for routes - using mock data only');
+      });
+    }
+  }, [mounted]);
 
   const [notifications, setNotifications] = useState(mockNotifications);
   const [routes, setRoutes] = useState(mockRoutes);
@@ -249,8 +275,22 @@ export default function NotificationsPage() {
       setOrigin(null);
       setDestination(null);
       setDirectionsResponse(null);
-      setDialogOpen(false);
-      addToastNotification("success", "Route Added", `Route "${routeName}" has been successfully added to your saved routes.`);
+              setDialogOpen(false);
+        addToastNotification("success", "Route Added", `Route "${routeName}" has been successfully added to your saved routes.`);
+        
+        // Refresh routes from backend to show the newly added route
+        fetchRoutesFromBackend().then((updatedRoutesData) => {
+          if (updatedRoutesData) {
+            const backendRoutes = convertRoutesToExpectedFormat(updatedRoutesData);
+            setRoutes(prev => {
+              // Remove the temporary route and old backend routes, then add fresh backend data
+              const withoutTempAndBackend = prev.filter(route => route.id !== tempId && route.id < 10000);
+              return [...backendRoutes, ...withoutTempAndBackend];
+            });
+          }
+        }).catch((error) => {
+          console.log('Could not refresh routes from backend - keeping local data');
+        });
 
     } catch (error) {
       console.error("Failed to save route:", error);
@@ -269,6 +309,104 @@ export default function NotificationsPage() {
     }
   };
 
+  // Simple API functions to fetch data from backend (similar to addRoute structure)
+  const fetchReportsFromBackend = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+      const endpoint = `${apiUrl}/api/reports`;
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch reports from backend:', error);
+      return null;
+    }
+  };
+
+  const fetchRoutesFromBackend = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+      const endpoint = `${apiUrl}/api/routes`;
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch routes from backend:', error);
+      return null;
+    }
+  };
+
+  // Simple conversion functions to transform backend data to frontend format
+  const convertReportsToNotifications = (reportsData: any) => {
+    const notifications: any[] = [];
+    let notificationId = 1000; // Start with high ID to avoid conflicts with mock data
+
+    // Convert road hazards to notifications
+    if (reportsData.road_hazards) {
+      reportsData.road_hazards.forEach((hazard: any) => {
+        notifications.push({
+          id: notificationId++,
+          type: hazard.severity === 'urgent' ? 'urgent' : 'warning',
+          title: `${hazard.hazard_type} Report`,
+          message: hazard.description || `Road hazard reported at ${hazard.location}`,
+          location: hazard.location,
+          timestamp: new Date(hazard.created_at).toLocaleString(),
+          read: false
+        });
+      });
+    }
+
+    // Convert traffic light reports to notifications
+    if (reportsData.traffic_light_reports) {
+      reportsData.traffic_light_reports.forEach((trafficLight: any) => {
+        notifications.push({
+          id: notificationId++,
+          type: 'urgent',
+          title: 'Traffic Light Issue',
+          message: `${trafficLight.fault_type} at ${trafficLight.intersection}`,
+          location: trafficLight.intersection,
+          timestamp: new Date(trafficLight.created_at).toLocaleString(),
+          read: false
+        });
+      });
+    }
+
+    return notifications;
+  };
+
+  const convertRoutesToExpectedFormat = (routesData: any[]) => {
+    return routesData.map((route: any) => ({
+      id: route.id + 10000, // Add offset to avoid conflicts with mock data
+      name: route.name,
+      from_address: route.from_address,
+      to_address: route.to_address,
+      polyline: route.polyline,
+      active: true
+    }));
+  };
+
   const toggleRoute = (id: number) => {
     setRoutes(
       routes.map((route) =>
@@ -279,6 +417,38 @@ export default function NotificationsPage() {
 
   const removeRoute = (id: number) => {
     setRoutes(routes.filter((route) => route.id !== id));
+  };
+
+  const handleRefreshNotifications = () => {
+    fetchReportsFromBackend().then((reportsData) => {
+      if (reportsData) {
+        const backendNotifications = convertReportsToNotifications(reportsData);
+        setNotifications(prev => {
+          // Remove old backend notifications (IDs >= 1000) and add fresh ones
+          const withoutBackend = prev.filter(notif => notif.id < 1000);
+          return [...backendNotifications, ...withoutBackend];
+        });
+        addToastNotification("success", "Refreshed", "Notifications have been refreshed from backend.");
+      }
+    }).catch((error) => {
+      addToastNotification("warning", "Refresh Failed", "Could not refresh notifications from backend.");
+    });
+  };
+
+  const handleRefreshRoutes = () => {
+    fetchRoutesFromBackend().then((routesData) => {
+      if (routesData) {
+        const backendRoutes = convertRoutesToExpectedFormat(routesData);
+        setRoutes(prev => {
+          // Remove old backend routes (IDs >= 10000) and add fresh ones
+          const withoutBackend = prev.filter(route => route.id < 10000);
+          return [...backendRoutes, ...withoutBackend];
+        });
+        addToastNotification("success", "Refreshed", "Routes have been refreshed from backend.");
+      }
+    }).catch((error) => {
+      addToastNotification("warning", "Refresh Failed", "Could not refresh routes from backend.");
+    });
   };
 
   const getNotificationIcon = (type: string) => {
@@ -386,14 +556,24 @@ export default function NotificationsPage() {
                 <h2 className="text-lg md:text-xl font-semibold">
                   Recent Notifications
                 </h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={markAllAsRead}
-                  disabled={unreadCount === 0}
-                >
-                  Mark All Read
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefreshNotifications}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={markAllAsRead}
+                    disabled={unreadCount === 0}
+                  >
+                    Mark All Read
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -458,13 +638,22 @@ export default function NotificationsPage() {
           <TabsContent value="routes" className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <h2 className="text-lg md:text-xl font-semibold">My Routes</h2>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Route
-                  </Button>
-                </DialogTrigger>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefreshRoutes}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Route
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent onInteractOutside={handleInteractOutside} className="mx-4 overflow-visible">
                   <DialogHeader>
                     <DialogTitle>Add New Route</DialogTitle>
@@ -517,6 +706,7 @@ export default function NotificationsPage() {
                   </div>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
 
               <div className="space-y-4">
