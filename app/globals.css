@@ -123,3 +123,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Allows Google Places Autocomplete to be clickable inside a modal - giving it a higher z-index than the dialog*/
+.pac-container {
+  z-index: 9999 !important;
+}
+
+/* Fix for Google Places Autocomplete in dialogs */
+[data-radix-dialog-content] {
+  overflow: visible !important;
+}
+
+/* Ensure the dialog content doesn't clip the autocomplete dropdown */
+[data-radix-dialog-content] .pac-container {
+  position: fixed !important;
+  z-index: 9999 !important;
+}

@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import AppLayout from "@/components/AppLayout"
 import { ThemeProvider } from "@/components/theme-provider"
+import { GoogleMapsProvider } from '@/components/google-maps-provider'
 import "./globals.css"
 
 const playfairDisplay = Playfair_Display({
@@ -48,10 +49,12 @@ export default function RootLayout({
       </head>
       <body className={`font-sans ${playfairDisplay.variable} ${sourceSans.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AppLayout>
-            <Suspense fallback={null}>{children}</Suspense>
-          </AppLayout>
-          <Analytics />
+          <GoogleMapsProvider>
+            <AppLayout>
+              <Suspense fallback={null}>{children}</Suspense>
+            </AppLayout>
+            <Analytics />
+          </GoogleMapsProvider>
         </ThemeProvider>
       </body>
     </html>
